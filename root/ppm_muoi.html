@@ -21,8 +21,8 @@
   <label>KNO₃ (g): <input type="number" id="kno3" step="any" value="50"></label>
   <label>K₂SO₄ (g): <input type="number" id="k2so4" step="any" value="30"></label>
   <label>MAP - NH₄H₂PO₄ (g): <input type="number" id="map" step="any" value="2"></label>
-  <label>Fe EDDHA 61% (g): <input type="number" id="fe" step="any" value="1.5"></label>
-  <label>MnSO₄ (g): <input type="number" id="mnso4" step="any" value="1"></label>
+  <label>Fe EDDHA 6% (g): <input type="number" id="fe" step="any" value="1.5"></label>
+  <label>MnSO₄ (g): <input type="number" id="mnso4" step="any" value="2"></label>
   <label>Vi lượng nhóm B (g): <input type="number" id="micro" step="any" value="3"></label>
   <label>Thể tích nước (lít): <input type="number" id="volume" step="any" value="130"></label>
   <label>Số lần chia ra sử dụng: <input type="number" id="doses" step="any" value="10"></label>
@@ -61,7 +61,7 @@
       SO4: (k2so4 / M.K2SO4.molarMass + mnso4 / M.MnSO4.molarMass) * 96.1 * 1000 / V / n,
       NH4: map / M.MAP.molarMass * 18.0 * 1000 / V / n,
       PO4: map / M.MAP.molarMass * 95.0 * 1000 / V / n,
-      Fe: fe * 0.06 * 1000 / V / n,
+      Fe: fe * 0.006 * 1000 / V / n,
       Cu: micro * 0.012 * 1000 / V / n,
       Zn: micro * 0.038 * 1000 / V / n,
       Mn: (micro * 0.049 + mnso4 / M.MnSO4.molarMass * M.MnSO4.Mn) * 1000 / V / n,

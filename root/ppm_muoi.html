@@ -102,6 +102,24 @@
   }
 
   inputs.forEach(input => input.addEventListener("input", calcPPM));
+   
+   // Tự động lưu lại khi nhập
+document.querySelectorAll('input, select, textarea').forEach(el => {
+  if (el.id) {
+    el.addEventListener('input', () => {
+      localStorage.setItem('ppm_' + el.id, el.value);
+    });
+  }
+});
+
+// Tự động khôi phục lại khi mở lại web
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (el.id && localStorage.getItem('ppm_' + el.id)) {
+      el.value = localStorage.getItem('ppm_' + el.id);
+    }
+  });
+});
   window.onload = calcPPM;
 </script>
 

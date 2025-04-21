@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tính PPM các Ion từ Muối Khô</title>
+  <style>
+    body {width: 800px; font-family: Arial; background: #eef7ff; padding: 20px; }
+    h2 { color: #124e78; }
+    label { display: block; margin-top: 10px; }
+    input { width: 100px; margin-left: 5px; }
+    .result { background: #e0f8e0; margin-top: 20px; padding: 15px; border-radius: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #d6eaf8; }
+    .low { background-color: #ffdddd; }
+    .high { background-color: #fff3cd; }
+  </style>
+</head>
+<body>
+  <h2>🔬 Tính PPM từ KNO₃, K₂SO₄, MAP, Fe EDDHA, vi lượng</h2>
+  <label>KNO₃ (g): <input type="number" id="kno3" step="any" value="50"></label>
+  <label>K₂SO₄ (g): <input type="number" id="k2so4" step="any" value="30"></label>
+  <label>MAP - NH₄H₂PO₄ (g): <input type="number" id="map" step="any" value="2"></label>
+  <label>Fe EDDHA 61% (g): <input type="number" id="fe" step="any" value="1.5"></label>
+  <label>MnSO₄ (g): <input type="number" id="mnso4" step="any" value="1"></label>
+  <label>Vi lượng nhóm B (g): <input type="number" id="micro" step="any" value="3"></label>
+  <label>Thể tích nước (lít): <input type="number" id="volume" step="any" value="130"></label>
+  <label>Số lần chia ra sử dụng: <input type="number" id="doses" step="any" value="10"></label>
+
+  <div class="result" id="result"></div>
+
+ <script>
+  const inputs = document.querySelectorAll("input");
+
+  function parseGoal(range) {
+    if (!range.includes("–")) return [null, null];
+    const [min, max] = range.split("–").map(x => parseFloat(x));
+    return [min, max];
+  }
+
+  function calcPPM() {
+    const M = {
+      KNO3: { K: 39.1, N: 14.0, O: 48.0, molarMass: 101.1 },
+      K2SO4: { K: 78.2, S: 32.1, O: 64.0, molarMass: 174.3 },
+      MAP: { N: 14.0, H: 5.0, P: 31.0, O: 64.0, molarMass: 115.0 },
+      MnSO4: { Mn: 54.9, S: 32.1, O: 64.0, molarMass: 151.0 },
+    };
+
+    const kno3 = parseFloat(document.getElementById("kno3").value) || 0;
+    const k2so4 = parseFloat(document.getElementById("k2so4").value) || 0;
+    const map = parseFloat(document.getElementById("map").value) || 0;
+    const fe = parseFloat(document.getElementById("fe").value) || 0;
+    const mnso4 = parseFloat(document.getElementById("mnso4").value) || 0;
+    const micro = parseFloat(document.getElementById("micro").value) || 0;
+    const V = parseFloat(document.getElementById("volume").value) || 1;
+    const n = parseFloat(document.getElementById("doses").value) || 1;
+
+    const ppm = {
+      K: (kno3 / M.KNO3.molarMass * M.KNO3.K + k2so4 / M.K2SO4.molarMass * M.K2SO4.K) * 1000 / V / n,
+      NO3: kno3 / M.KNO3.molarMass * 62.0 * 1000 / V / n,
+      SO4: (k2so4 / M.K2SO4.molarMass + mnso4 / M.MnSO4.molarMass) * 96.1 * 1000 / V / n,
+      NH4: map / M.MAP.molarMass * 18.0 * 1000 / V / n,
+      PO4: map / M.MAP.molarMass * 95.0 * 1000 / V / n,
+      Fe: fe * 0.06 * 1000 / V / n,
+      Cu: micro * 0.012 * 1000 / V / n,
+      Zn: micro * 0.038 * 1000 / V / n,
+      Mn: (micro * 0.049 + mnso4 / M.MnSO4.molarMass * M.MnSO4.Mn) * 1000 / V / n,
+      Mo: micro * 0.013 * 1000 / V / n,
+      B: micro * 0.056 * 1000 / V / n,
+    };
+
+    const goals = {
+      K: "20–30",
+      NO3: "20–30",
+      PO4: "2–5",
+      Fe: "1.5–3.0",
+      Cu: "0.018–0.03",
+      Zn: "0.09–0.15",
+      Mn: "0.45–0.75",
+      Mo: "0.009–0.018",
+      B: "0.09–0.15",
+      SO4: "—",
+      NH4: "—",
+    };
+
+    let html = `<table><tr><th>Ion</th><th>PPM mỗi lần</th><th>Mục tiêu tuần</th></tr>`;
+    for (const [ion, value] of Object.entries(ppm)) {
+      const val = value.toFixed(3);
+      const range = goals[ion];
+      let cls = "";
+
+      if (range && range.includes("–")) {
+        const [min, max] = parseGoal(range);
+        if (value < min) cls = "low";
+        else if (value > max) cls = "high";
+      }
+
+      html += `<tr class="${cls}"><td>${ion}</td><td>${val}</td><td>${range || '—'}</td></tr>`;
+    }
+    html += `</table>`;
+    document.getElementById("result").innerHTML = html;
+  }
+
+  inputs.forEach(input => input.addEventListener("input", calcPPM));
+  window.onload = calcPPM;
+</script>
+
+</body>
+</html>

@@ -23,7 +23,9 @@
   <label>MAP - NH₄H₂PO₄ (g): <input type="number" id="map" step="any" value="2"></label>
   <label>Fe EDDHA 6% (g): <input type="number" id="fe" step="any" value="1.6"></label>
   <label>MnSO₄ (g): <input type="number" id="mnso4" step="any" value="2"></label>
-  <label>Vi lượng nhóm B (g): <input type="number" id="micro" step="any" value="3"></label>
+  <label>Zn-EDTA 15% (g): <input type="number" id="zn_edta" step="any" value="2"></label>
+  <label>Solubor 20.5% (g): <input type="number" id="solubor" step="any" value="2"></label>
+  <label>Vi lượng nhóm B tổng hợp (g): <input type="number" id="micro" step="any" value="3"></label>
   <label>Thể tích nước (lít): <input type="number" id="volume" step="any" value="130"></label>
   <label>Số lần chia ra sử dụng: <input type="number" id="doses" step="any" value="10"></label>
 
@@ -38,13 +40,31 @@
     return [min, max];
   }
 
-  function calcPPM() {
-    const M = {
-      KNO3: { K: 39.1, N: 14.0, O: 48.0, molarMass: 101.1 },
-      K2SO4: { K: 78.2, S: 32.1, O: 64.0, molarMass: 174.3 },
-      MAP: { N: 14.0, H: 5.0, P: 31.0, O: 64.0, molarMass: 115.0 },
-      MnSO4: { Mn: 54.9, S: 32.1, O: 64.0, molarMass: 151.0 },
-    };
+  const fe = parseFloat(document.getElementById("fe").value) || 0;
+const mnso4 = parseFloat(document.getElementById("mnso4").value) || 0;
+const zn_edta = parseFloat(document.getElementById("zn_edta").value) || 0;
+const solubor = parseFloat(document.getElementById("solubor").value) || 0;
+const micro = parseFloat(document.getElementById("micro").value) || 0;
+
+// Lấy thông số cơ bản
+const V = parseFloat(document.getElementById("volume").value) || 1;
+const n = parseFloat(document.getElementById("doses").value) || 1;
+
+// ppm tính tổng cộng
+const ppm = {
+  K: (kno3 / M.KNO3.molarMass * M.KNO3.K + k2so4 / M.K2SO4.molarMass * M.K2SO4.K) * 1000 / V / n,
+  NO3: kno3 / M.KNO3.molarMass * 62.0 * 1000 / V / n,
+  SO4: (k2so4 / M.K2SO4.molarMass + mnso4 / M.MnSO4.molarMass) * 96.1 * 1000 / V / n,
+  NH4: map / M.MAP.molarMass * 18.0 * 1000 / V / n,
+  PO4: map / M.MAP.molarMass * 95.0 * 1000 / V / n,
+  Fe: fe * 0.06 * 1000 / V / n,
+  Cu: micro * 0.012 * 1000 / V / n,
+  Zn: (micro * 0.038 + zn_edta * 0.15) * 1000 / V / n,
+  Mn: (micro * 0.049 + mnso4 / M.MnSO4.molarMass * M.MnSO4.Mn) * 1000 / V / n,
+  Mo: micro * 0.013 * 1000 / V / n,
+  B: (micro * 0.056 + solubor * 0.205) * 1000 / V / n,
+};
+
 
     const kno3 = parseFloat(document.getElementById("kno3").value) || 0;
     const k2so4 = parseFloat(document.getElementById("k2so4").value) || 0;

@@ -65,7 +65,7 @@ const ppm = {
   B: (micro * 0.056 + solubor * 0.205) * 1000 / V / n,
 };
 
-
+function calcPPM(){
     const kno3 = parseFloat(document.getElementById("kno3").value) || 0;
     const k2so4 = parseFloat(document.getElementById("k2so4").value) || 0;
     const map = parseFloat(document.getElementById("map").value) || 0;
@@ -88,7 +88,7 @@ const ppm = {
       Mo: micro * 0.013 * 1000 / V / n,
       B: micro * 0.056 * 1000 / V / n,
     };
-
+}
     const goals = {
       K: "15–25",
       NO3: "10–15",

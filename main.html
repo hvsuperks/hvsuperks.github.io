@@ -49,43 +49,7 @@
       <tr><td class="label">Lượng nước đã thay trong tuần: </td><td id="water_today">--</td><td></td></tr>
     </table>
   </div>
-
-  <script>
-    async function fetchData() {
-      try {
-        const res = await fetch("http://esp32.local/data"); // địa chỉ thay bằng IP thực tế của ESP32
-        const data = await res.json();
-
-        document.getElementById("temp_tank").innerText = data.temp_tank + " °C";
-        document.getElementById("temp_room").innerText = data.temp_room + " °C";
-        document.getElementById("temp_set").innerText = data.temp_set + " °C";
-        document.getElementById("temp_diff").innerText = data.temp_diff + " °C";
-        document.getElementById("temp_offset").innerText = data.temp_offset + " °C";
-        document.getElementById("chiller_btn").innerText = data.chiller ? "ON" : "OFF";
-        document.getElementById("chiller_btn").className = data.chiller ? "onoff-btn on" : "onoff-btn off";
-
-        document.getElementById("filter_btn").innerText = data.filter ? "ON" : "OFF";
-        document.getElementById("filter_btn").className = data.filter ? "onoff-btn on" : "onoff-btn off";
-        document.getElementById("filter_pause").innerText = data.filter_pause;
-
-        document.getElementById("co2_btn").innerText = data.co2 ? "ON" : "OFF";
-        document.getElementById("co2_btn").className = data.co2 ? "onoff-btn on" : "onoff-btn off";
-        document.getElementById("co2_on").innerText = data.co2_on;
-        document.getElementById("co2_off").innerText = data.co2_off;
-
-        document.getElementById("valve_btn").innerText = data.valve ? "ON" : "OFF";
-        document.getElementById("valve_btn").className = data.valve ? "onoff-btn on" : "onoff-btn off";
-        document.getElementById("water_day").innerText = data.water_day;
-        document.getElementById("water_volume").innerText = data.water_volume + "L";
-        document.getElementById("water_speed").innerText = data.water_speed + "L/h";
-        document.getElementById("water_today").innerText = data.water_today + "L";
-      } catch (e) {
-        console.error("Lỗi khi tải dữ liệu:", e);
-      }
-    }
-
-    setInterval(fetchData, 5000); // cập nhật mỗi 5 giây
-    fetchData(); // lần đầu tiên
-  </script>
+  
+<script type="module" src="./main.js"></script>
 </body>
 </html>

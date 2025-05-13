@@ -4,7 +4,7 @@
 #include <Preferences.h>
 #include <Update.h>
 #include <HTTPClient.h>
-
+#include "Temp_sensor.h"
 // Thư viện Firebase
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"

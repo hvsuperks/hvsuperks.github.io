@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trạng thái hệ thống bể thủy sinh</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px;   justify-content: center;  align-items: center; }
+    h2 { background: #4CAF50; color: white; padding: 10px; border-radius: 5px; text-align:center; }
+    .panel { background: white; padding: 15px; margin: 0 auto; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);max-width: 414px; }
+    table { border-collapse: collapse;width:100%; }
+    td, th { padding: 8px; border-bottom: 1px solid #ddd; }
+    .onoff-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
+    .on { background: #4CAF50; color: white; }
+    .off { background: #ccc; color: #333; }
+    td.label { text-align: right; width:60% ;}
+    .blank td {border:none;}
+    td { width:20%;text-align:right}
+ 
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h2>Trạng thái nhiệt độ</h2>
+    <table>
+      <tr><td class="label">Nhiệt độ bể:</td><td id="temp_tank">--</td><td></td></tr>
+      <tr><td class="label">Nhiệt độ phòng: </td><td id="temp_room">--</td><td></td></tr>
+      <tr><td class="label">Nhiệt độ cài đặt: </td><td id="temp_set">--</td><td></td></tr>
+      <tr><td class="label">Nhiệt độ trên lệch: </td><td id="temp_diff">--</td><td></td></tr>
+      <tr><td class="label">Nhiệt độ hiệu chỉnh: </td><td id="temp_offset">--</td><td></td></tr>
+      <tr><td class="label">Trạng thái Chiller:</td><td id="chiller_Status"> ON </td><td><button id="chiller_btn" class="onoff-btn">--</button></td></tr>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Trạng thái điều khiển</h2>
+    <table>
+      <tr><td class="label">Trạng thái Lọc:</td><td id="Loc_Status"> ON </td><td><button id="filter_btn" class="onoff-btn">--</button></td></tr>
+      <tr><td class="label">Thời gian nghỉ của Lọc: </td><td id="filter_pause">--</td><td></td></tr>
+     <tr class="blank" ><td>&nbsp</td><td></td><td></td></tr>
+      <tr><td class="label">Trạng thái CO2:</td><td ID="CO2_Status"> ON </td><td><button id="co2_btn" class="onoff-btn">--</button></td></tr>
+      <tr><td class="label">CO2 On: </td><td id="co2_on">--</td><td></td></tr>
+      <tr><td class="label">CO2 Off: </td><td id="co2_off">--</td><td></td></tr>
+     <tr class="blank"><td>&nbsp</td><td></td><td></td></tr>
+      <tr><td class="label">Trạng thái van thay nước:</td><td ID="Nuoc_Status"> ON </td><td><button id="valve_btn" class="onoff-btn">--</button></td></tr>
+      <tr><td class="label">Thời gian thay nước: </td><td id="water_day">--</td><td></td></tr>
+      <tr><td class="label">Lượng nước thay: </td><td id="water_volume">--</td><td></td></tr>
+      <tr><td class="label">Vận tốc thay nước: </td><td id="water_speed">--</td><td></td></tr>
+      <tr><td class="label">Lượng nước đã thay trong tuần: </td><td id="water_today">--</td><td></td></tr>
+    </table>
+  </div>
+
+  <script>
+    async function fetchData() {
+      try {
+        const res = await fetch("http://esp32.local/data"); // địa chỉ thay bằng IP thực tế của ESP32
+        const data = await res.json();
+
+        document.getElementById("temp_tank").innerText = data.temp_tank + " °C";
+        document.getElementById("temp_room").innerText = data.temp_room + " °C";
+        document.getElementById("temp_set").innerText = data.temp_set + " °C";
+        document.getElementById("temp_diff").innerText = data.temp_diff + " °C";
+        document.getElementById("temp_offset").innerText = data.temp_offset + " °C";
+        document.getElementById("chiller_btn").innerText = data.chiller ? "ON" : "OFF";
+        document.getElementById("chiller_btn").className = data.chiller ? "onoff-btn on" : "onoff-btn off";
+
+        document.getElementById("filter_btn").innerText = data.filter ? "ON" : "OFF";
+        document.getElementById("filter_btn").className = data.filter ? "onoff-btn on" : "onoff-btn off";
+        document.getElementById("filter_pause").innerText = data.filter_pause;
+
+        document.getElementById("co2_btn").innerText = data.co2 ? "ON" : "OFF";
+        document.getElementById("co2_btn").className = data.co2 ? "onoff-btn on" : "onoff-btn off";
+        document.getElementById("co2_on").innerText = data.co2_on;
+        document.getElementById("co2_off").innerText = data.co2_off;
+
+        document.getElementById("valve_btn").innerText = data.valve ? "ON" : "OFF";
+        document.getElementById("valve_btn").className = data.valve ? "onoff-btn on" : "onoff-btn off";
+        document.getElementById("water_day").innerText = data.water_day;
+        document.getElementById("water_volume").innerText = data.water_volume + "L";
+        document.getElementById("water_speed").innerText = data.water_speed + "L/h";
+        document.getElementById("water_today").innerText = data.water_today + "L";
+      } catch (e) {
+        console.error("Lỗi khi tải dữ liệu:", e);
+      }
+    }
+
+    setInterval(fetchData, 5000); // cập nhật mỗi 5 giây
+    fetchData(); // lần đầu tiên
+  </script>
+</body>
+</html>

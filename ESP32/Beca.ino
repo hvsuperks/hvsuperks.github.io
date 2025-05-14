@@ -67,6 +67,14 @@ void saveWiFiConfig(String s, String p) {
   preferences.end();
 }
 
+// Đọc Setting từ preferences
+void loadSetting(){
+  preferences.begin("setting", false);
+  preferences.getint("temp_set",28);
+  preferences.get
+  preferences.end();
+}
+
 // Cầu phân áp - đọc NTC 10k
 float readNTCTemperature(int analogPin) {
   int adcValue = analogRead(analogPin);

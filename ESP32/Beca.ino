@@ -42,6 +42,8 @@ unsigned long lastReconnectAttempt = 0;
 unsigned long lastFirebaseUpdate = 0;
 bool wifiConnected = false;
 
+
+
 // Upload Firmware
 const String currentVersion = "v1.0.0";  // Cập nhật thủ công trước khi build
 const String versionURL = "https://raw.githubusercontent.com/yourusername/esp32-ota/main/version.txt";
@@ -235,8 +237,8 @@ void setup() {
   if (wifiConnected) {
     config.api_key = API_KEY;
     config.database_url = DATABASE_URL;
-    auth.user.email = "test@test.com";
-    auth.user.password = "123456";
+    auth.user.email = "HVsuperKS@gmail.com";
+    auth.user.password = "SAObang!((#";
 
     Firebase.begin(&config, &auth);
     Firebase.reconnectWiFi(true);

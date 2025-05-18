@@ -1,84 +1,223 @@
+void(* resetFunc) (void) = 0; //reset
 #include <WiFi.h>
 #include <WebServer.h>
-#include <Firebase_ESP_Client.h>
-#include <Preferences.h>
+#include <Ticker.h>
 #include <Update.h>
-#include <HTTPClient.h>
-#include "Temp_sensor.h"
-// Thư viện Firebase
-#include "addons/TokenHelper.h"
-#include "addons/RTDBHelper.h"
+#include <Preferences.h>
+#include <time.h>
+#include <Firebase_ESP_Client.h>
+//#include "update_firmware.h"
 
-// ----------------- CẤU HÌNH -------------------
-#define WIFI_TIMEOUT_MS 20000
-#define RECONNECT_INTERVAL 300000  // 5 phút
+//------------------ Khai báo biến ..............//
 
-#define NTC1_PIN 34
-#define NTC2_PIN 35
+String ssid = ""; //----- Wifi --------//
+String pass = ""; //----- Wifi --------//
 
-#define RELAY1 23
-#define RELAY2 22
-#define RELAY3 21
-#define RELAY4 19
+//---------- Khai báo các chân PIN ----------//
+#define Pin_temp_tank 34 //----- Sensor nhiệt NTC của bể -----//
+#define Pin_temp_room 35 //----- Sensor nhiệt NTC Phòng -----//
+#define RELAY_Chiller 23
+#define RELAY_Filter 22
+#define RELAY_Co2 21
+#define RELAY_Water 19
+#define off 1
+#define on 0
 
+Preferences eeprom; //----- Khai báo biến lưu eeprom -----//
+WebServer server(80); //----- Khai báo WebSever -----//
+Ticker Ticker; //----- Khai báo bộ hẹn giờ -----//
+
+//---------- Khai báo các biến đọc FireBase JSON ----------//
 FirebaseData fbdo;
 FirebaseAuth auth;
+FirebaseData stream;
 FirebaseConfig config;
-Preferences preferences;
-WebServer server(80);
+#define API_KEY = "AIzaSyAOOtP5Va7zCa9lH62H20piGYCvdACt9DE";
+#define DATABASE_URL = "https://be-ca-ad623-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-// Firebase config
-const char* API_KEY = "AIzaSyAOOtP5Va7zCa9lH62H20piGYCvdACt9DE";
-const char* DATABASE_URL = "https://be-ca-ad623-default-rtdb.asia-southeast1.firebasedatabase.app";
-
-// Đường dẫn node Firebase
-const char* relayPath = "/relays";
-const char* tempPath = "/temperature";
-const char* settingPath = "/settings";
-
-// WiFi
-String ssid, pass;
-unsigned long lastReconnectAttempt = 0;
-unsigned long lastFirebaseUpdate = 0;
-bool wifiConnected = false;
-
-
-
-// Upload Firmware
+//---------- Khai báo Version FirmWare và Sever Update FirmWare ----------//
 const String currentVersion = "v1.0.0";  // Cập nhật thủ công trước khi build
 const String versionURL = "https://raw.githubusercontent.com/yourusername/esp32-ota/main/version.txt";
 const String firmwareURL = "https://raw.githubusercontent.com/yourusername/esp32-ota/main/firmware.bin";
-unsigned long lastCheckTime = 0;
-#define CHECK_INTERVAL 3600000  // 1 giờ
 
-// ---------------------------------------------
+//---------- Khai báo các biến Setting ----------//
+float temp_set, temp_diff, temp_offset, temp_tank, temp_room; // Khai báo các biến nhiệt độ cài đặt
+int filter_pause, co2_on_1,co2_on_2, co2_off_1, co2_off_2, water_day, water_volume, water_speed; // Khai báo các biến liên quan thời gian
 
-// Đọc từ Preferences (Flash)
-void loadWiFiConfig() {
-  preferences.begin("wifi", true);
-  ssid = preferences.getString("ssid", "");
-  pass = preferences.getString("pass", "");
-  preferences.end();
+//---------- Khai báo biến thời gian ----------//
+int h, m, s, thu, ngay, thang;
+struct tm timeinfo;
+
+//---------- Đọc các giá trị Setting trong EEPROM ----------//
+void loadSetting(){
+  eeprom.begin("wifi", true);
+  ssid = eeprom.getString("ssid", "");
+  pass = eeprom.getString("pass", "");
+  eeprom.end();
+
+  eeprom.begin("setting", false);
+  eeprom.getFloat("temp_set",28);
+  eeprom.getFloat("temp_diff",3);
+  eeprom.getFloat("temp_offset",3);
+  eeprom.getInt("filter_pause",10);
+  eeprom.getInt("co2_on_1",300);
+  eeprom.getInt("co2_on_2",1020);
+  eeprom.getInt("co2_off_1",600);
+  eeprom.getInt("co2_off_2",1320);
+  eeprom.getInt("water_day",1);
+  eeprom.getInt("water_volume",30);
+  eeprom.getInt("water_speed",1320);
+  eeprom.end();
 }
 
 // Ghi lại WiFi config
 void saveWiFiConfig(String s, String p) {
-  preferences.begin("wifi", false);
-  preferences.putString("ssid", s);
-  preferences.putString("pass", p);
-  preferences.end();
+  eeprom.begin("wifi", false);
+  eeprom.putString("ssid", s);
+  eeprom.putString("pass", p);
+  eeprom.end();
 }
 
-// Đọc Setting từ preferences
-void loadSetting(){
-  preferences.begin("setting", false);
-  preferences.getint("temp_set",28);
-  preferences.get
-  preferences.end();
+FirebaseData stream_setting;
+FirebaseData stream_relay;
+
+//----------- Xử lý sự kiện thay đổi Json ----------//
+void onDataChanged(String path, String value) {
+  Serial.println("🔥 Dữ liệu Firebase thay đổi:");
+  Serial.println("Path: " + path);
+  Serial.println("Giá trị mới: " + value);
+
+  // Thực hiện hành động gì đó ở đây...
 }
 
-// Cầu phân áp - đọc NTC 10k
-float readNTCTemperature(int analogPin) {
+//---------- Lấy Data khi Json thay đổi ----------//
+void stream_setting_Callback(FirebaseStream data) {
+  String path = data.dataPath();
+  String value = data.stringData();
+  if (path == "/setting/temp_set") {
+    temp_set = value.toFloat();
+  } else if (path == "/setting/temp_diff") {
+    temp_diff = value.toFloat();
+  }else if (path == "/setting/temp_offset") {
+    temp_offset = value.toFloat();
+  }else if (path == "/setting/filter_pause") {
+    filter_pause = value.toInt();
+  }else if (path == "/setting/co2_on_1") {
+    co2_on_1 = value.toInt();
+  }else if (path == "/setting/co2_on_2") {
+    co2_on_2 = value.toInt();
+  }else if (path == "/setting/co2_off_1") {
+    co2_off_1 = value.toInt();
+  }else if (path == "/setting/co2_off_2") {
+    co2_off_2 = value.toInt();
+  }else if (path == "/setting/water_day") {
+    water_day = value.toInt();
+  }else if (path == "/setting/water_volume") {
+    water_volume = value.toInt();
+  }else if (path == "/setting/water_speed") {
+    water_speed = value.toInt();
+  }
+
+}
+
+void stream_relay_Callback(FirebaseStream data) {
+  String path = data.dataPath();
+  if (data.stringData() == "ON"){
+    value = on;
+  }else{
+    value = off;
+  }
+  if (path == "/relay/chiller") {
+    digitalWrite(RELAY_Chiller, value);
+  }else if(path == "/relay/fillter"){
+    digitalWrite(RELAY_Fillter, value);
+    if (value == off){
+      digitalWrite(RELAY_Co2, off);
+      digitalWrite(RELAY_Chiller, off);
+    }
+  }
+}
+
+//---------- Kiểm tra kết nối Stream Json ----------//
+void streamTimeoutCallback(bool timeout) {
+  if (timeout) {
+    Serial.println("⏳ Firebase stream timeout, đang kết nối lại...");
+  }
+}
+
+//---------- Config Sever Firebase ----------//
+void setupFirebase() {
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
+  auth.user.email = "HVsuperKS@gmail.com";
+  auth.user.password = "SAObang!((#";
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+    // Bắt đầu stream ở đường dẫn bạn muốn theo dõi
+  Firebase.RTDB.beginStream(&stream_setting, "/setting")
+  Firebase.RTDB.setStreamCallback(&stream_setting, stream_setting_Callback, streamTimeoutCallback);
+  Firebase.RTDB.beginStream(&stream_relay, "/relay")
+  Firebase.RTDB.setStreamCallback(&stream_relay, stream_relay_Callback, streamTimeoutCallback);
+}
+
+
+//---------- Đồng bộ thời gian ----------//
+void updateTime() {
+  if (WiFi.status() == WL_CONNECTED) {
+    configTime(7 * 3600, 0, "pool.ntp.org");  // GMT+7
+  }
+}
+
+//---------- Kiểm tra kết nối Internet ----------//
+bool testwifi(){
+  int c = 0;
+  while ( c < 80 )       
+  {
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      Serial.println("Wifi connected");
+      IPAddress ip = WiFi.localIP();
+      IPAddress sub = WiFi.subnetMask();
+      IPAddress defau = WiFi.gatewayIP();
+      IPAddress ipnew(ip[0],ip[1],ip[2],200);
+      WiFi.config(ipnew,defau,sub);
+      return true;
+    }
+    delay(200);
+    c++;
+    Serial.print(".");
+  }
+    Serial.println("Wifi NG");
+    return false;
+}
+
+//---------- Setup Wifi ---------- //
+void Setup_Wifi(){
+  WiFi.disconnect();
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid.c_str(), pass.c_str());
+  if(testwifi()){
+    updateTime();
+    while (!getLocalTime(&timeinfo)) {
+      Serial.println("Đang đồng bộ thời gian...");
+      delay(1000);
+    }
+    WiFi.setAutoReconnect(true);
+    setupFirebase();
+    //setupOTA();
+    Ticker.attach(60,updateTime);
+  }else{
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    delay(100);
+    WiFi.softAP("NTAnh");
+    Serial.println("Mở Wifi NTAnh");
+    Ticker.once(600,Setup_Wifi);
+  }
+}
+
+//---------- Đọc giá trị nhiệt độ ----------//
+float Read_temp(int analogPin) {
   int adcValue = analogRead(analogPin);
   float voltage = adcValue * 3.3 / 4095.0;
   float resistance = (3.3 * 10000.0 / voltage) - 10000.0;
@@ -92,23 +231,20 @@ float readNTCTemperature(int analogPin) {
   return steinhart;
 }
 
-// Khởi động Web config
-void startWebConfig() {
-  server.on("/", HTTP_GET, []() {
-    server.send(200, "text/html",
-      "<form method='POST'>SSID:<input name='s'><br>Password:<input name='p'><br><input type='submit'></form>");
-  });
+//---------- Cài đặt WebSever ----------//
+void Web_sever(){
+  server.on("/",[]{
+    Serial.println("Yêu cầu Web");
+    server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    server.sendHeader("Pragma", "no-cache");
+    server.sendHeader("Expires", "-1");
+    server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    server.send(200,"text/html","");
 
-  server.on("/", HTTP_POST, []() {
-    ssid = server.arg("s");
-    pass = server.arg("p");
-    saveWiFiConfig(ssid, pass);
-    server.send(200, "text/plain", "Đã lưu. Reset lại ESP.");
-    delay(1000);
-    //ESP.restart();
+    server.client().stop();
+    Serial.println("Seen");
   });
-
-  server.on("/update", HTTP_POST, []() {
+   server.on("/update", HTTP_POST, []() {
     server.send(200);
     ESP.restart();
   }, []() {
@@ -121,150 +257,108 @@ void startWebConfig() {
       Update.end();
     }
   });
-
-  server.begin();
-  Serial.println("Web config đang chạy.");
+  sever.begin();
+  Serial.println("Web Start");
 }
 
-// Kết nối WiFi tự động
-bool connectWiFi() {
-  WiFi.begin(ssid.c_str(), pass.c_str());
-  Serial.print("Đang kết nối WiFi: ");
-  unsigned long start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < WIFI_TIMEOUT_MS) {
-    delay(500);
-    Serial.print(".");
+//---------- Lấy thời gian hệ thống mỗi 1s ----------//
+void get_Time(){
+  if(getLocalTime(&timeinfo)){
+    int h = timeinfo.tm_hour;
+    int m = timeinfo.tm_min;
+    int s = timeinfo.tm_sec;
+    int thu = timeinfo.tm_wday;      // 0 = Chủ Nhật, 1 = Thứ 2, ..., 6 = Thứ 7
+    int ngay = timeinfo.tm_mday;     // 1 - 31
+    int thang = timeinfo.tm_mon + 1; // 0 - 11 → cộng 1 thành 1 - 12
   }
-  return WiFi.status() == WL_CONNECTED;
 }
 
-// Ghi dữ liệu lên Firebase
-void uploadToFirebase() {
-  float t1 = readNTCTemperature(NTC1_PIN);
-  float t2 = readNTCTemperature(NTC2_PIN);
-
-  Firebase.RTDB.setFloat(&fbdo, String(tempPath) + "/t1", t1);
-  Firebase.RTDB.setFloat(&fbdo, String(tempPath) + "/t2", t2);
-  Firebase.RTDB.setInt(&fbdo, String(relayPath) + "/r1", digitalRead(RELAY1));
-  Firebase.RTDB.setInt(&fbdo, String(relayPath) + "/r2", digitalRead(RELAY2));
-  Firebase.RTDB.setInt(&fbdo, String(relayPath) + "/r3", digitalRead(RELAY3));
-  Firebase.RTDB.setInt(&fbdo, String(relayPath) + "/r4", digitalRead(RELAY4));
+//---------- Khai báo các chân Inout vs Trạng thái ----------//
+void Setup_pin(){
+  pinMode(Pin_temp_tank,INPUT);
+  pinMode(Pin_temp_room,INPUT);
+  pinMode(RELAY_Chiller,OUTPUT);
+  pinMode(RELAY_Filter,OUTPUT);
+  pinMode(RELAY_Co2,OUTPUT);
+  pinMode(RELAY_Water,OUTPUT);
+  digitalWrite(RELAY_Chiller,off);
+  digitalWrite(RELAY_Filter,off);
+  digitalWrite(RELAY_Co2,off);
+  digitalWrite(RELAY_Water,off);
 }
 
-// Đọc lệnh từ Firebase
-void getRelayCommands() {
-  for (int i = 1; i <= 4; i++) {
-    String path = String(relayPath) + "/r" + i;
-    if (Firebase.RTDB.getInt(&fbdo, path)) {
-      digitalWrite(RELAY1 + i - 1, fbdo.intData() ? HIGH : LOW);
+void temp_rt(){
+  temp_tank = Read_temp(Pin_temp_tank) - temp_offset_tank;
+  temp_room = Read_temp(Pin_temp_room) temp_offset_room;
+}
+
+int Chiller_last_on;
+int Chiller_time_today;
+
+//---------- Điều khiển Chiller ----------//
+void Chiller(){
+  if(digitalRead(RELAY_Chiller) == off) {
+    if((temp_tank > (temp_set + temp_diff)) && (digitalRead(RELAY_Fillter) == on)){
+      digitalWrite(RELAY_Chiller, on);
+      Chiller_last_on = millis();
+      Firebase.RTDB.setString(&fbdo, "Status/Chiller", "ON");
+    }
+  }else{
+    if(temp_tank < (temp_set - temp_diff)){
+      digitalWrite(RELAY_Chiller, off);
+      Chiller_time_today += ((millis() - Chiller_last_on)/60);
+      Firebase.RTDB.setInt(&fbdo, "time/Chiller_today", Chiller_time_today);
+      Firebase.RTDB.setString(&fbdo, "Status/Chiller", "OFF");
     }
   }
+
 }
 
-// UPdate FirmWare
-void checkAndUpdateFirmware() {
-  HTTPClient http;
-  http.begin(versionURL);
-  int httpCode = http.GET();
-  if (httpCode == HTTP_CODE_OK) {
-    String newVersion = http.getString();
-    newVersion.trim(); // xóa xuống dòng hoặc khoảng trắng
+//---------- Điều khiển lọc ----------//
+void Fillter(){
+  digitalWrite(RELAY_Fillter, on);
+  Firebase.RTDB.setString(&fbdo, "Status/Fillter", "ON");
+}
 
-    Serial.println("Phiên bản hiện tại: " + currentVersion);
-    Serial.println("Phiên bản trên GitHub: " + newVersion);
 
-    if (newVersion != currentVersion) {
-      Serial.println("Có bản cập nhật mới, tiến hành OTA...");
+bool dk_co2 = 1;
 
-      http.end();  // đóng kết nối version
-
-      // Bắt đầu tải firmware
-      http.begin(firmwareURL);
-      int fwCode = http.GET();
-      if (fwCode == HTTP_CODE_OK) {
-        int contentLength = http.getSize();
-        WiFiClient *stream = http.getStreamPtr();
-
-        if (!Update.begin(contentLength)) {
-          Serial.println("Update.begin() thất bại");
-          return;
-        }
-
-        size_t written = Update.writeStream(*stream);
-        if (written == contentLength && Update.end(true)) {
-          Serial.println("Cập nhật thành công! Reset ESP...");
-          delay(1000);
-          ESP.restart();
-        } else {
-          Serial.println("Lỗi khi ghi firmware");
-        }
-      } else {
-        Serial.println("Không tìm thấy firmware.bin");
+//---------- Điều khiển Co2 ----------//
+void Co2(){
+  if(digitalRead(RELAY_Fillter) == "ON"){
+    if(dk_co2){
+      if((h*60 + m >= co2_on_1) && if(h*60 + m <= co2_off_1)) || ((h*60 + m >= co2_on_2) && if(h*60 + m <= co2_off_2)) {
+        digitalWrite(RELAY_Co2, on);
+        Firebase.RTDB.setString(&fbdo, "Status/Co2", "ON");
+      }else{
+        digitalWrite(RELAY_Co2, off);
+        Firebase.RTDB.setString(&fbdo, "Status/Co2", "OFF");
       }
-    } else {
-      Serial.println("Đã là bản mới nhất.");
     }
-  } else {
-    Serial.println("Không đọc được version.txt từ GitHub");
+  }else{
+    digitalWrite(RELAY_Co2, off)
+    Firebase.RTDB.setString(&fbdo, "Status/Co2", "OFF");
   }
-  http.end();
 }
 
+
+
+//------------------------------------------------------- Setup ----------------------------------------------//
 void setup() {
+  // put your setup code here, to run once:
   Serial.begin(115200);
-
-  // Init chân relay
-  pinMode(RELAY1, OUTPUT);
-  pinMode(RELAY2, OUTPUT);
-  pinMode(RELAY3, OUTPUT);
-  pinMode(RELAY4, OUTPUT);
-
-  // Tải WiFi từ ROM
-  loadWiFiConfig();
-
-  // Kết nối WiFi
-  if (connectWiFi()) {
-    wifiConnected = true;
-    Serial.println("\nWiFi connected!");
-  } else {
-    wifiConnected = false;
-    Serial.println("\nWiFi FAIL - mở Web config");
-    WiFi.softAP("ESP32_Config");
-    startWebConfig();
-  }
-
-  // Cấu hình Firebase nếu WiFi có
-  if (wifiConnected) {
-    config.api_key = API_KEY;
-    config.database_url = DATABASE_URL;
-    auth.user.email = "HVsuperKS@gmail.com";
-    auth.user.password = "SAObang!((#";
-
-    Firebase.begin(&config, &auth);
-    Firebase.reconnectWiFi(true);
-  }
+  Serial.println("start");
+  Setup_pin();
+  loadSetting();
+  Setup_Wifi();
+  Web_sever();
+  Ticker.attach(1,get_Time); //----- Đọc thời gian hệ thống mỗi 1s -----//
+  Ticker.attach(10,Temp_rt); //----- Đọc nhiệt độ mỗi 10s -----//
 }
+
 
 void loop() {
-  if (wifiConnected) {
-    if (Firebase.ready() && millis() - lastFirebaseUpdate > 5000) {
-      lastFirebaseUpdate = millis();
-      uploadToFirebase();
-      getRelayCommands();
-    }
-  } else {
-    server.handleClient();
 
-    if (millis() - lastReconnectAttempt > RECONNECT_INTERVAL) {
-      lastReconnectAttempt = millis();
-      if (connectWiFi()) {
-        //ESP.restart();  // reset lại để kích hoạt Firebase
-      }
-    }
-    // Check update FirmWare
-    if (wifiConnected && millis() - lastCheckTime > CHECK_INTERVAL) {
-      lastCheckTime = millis();
-      checkAndUpdateFirmware();
-    }
+  server.handleClient();
+  
   }
-}

@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
 async function start() {
-  const res = await fetch('./firebaseConfig.json');
+  const res = await fetch('firebaseConfig.json');
   const config = await res.json();
   const app = initializeApp(config);
   const db = getDatabase(app);

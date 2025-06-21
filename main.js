@@ -104,19 +104,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function startRelaySync() {
-    setInterval(() => {
-      get(child(ref(db), "control")).then(snapshot => {
-        if (snapshot.exists()) {
-          const relays = snapshot.val();
-          relayKeys.forEach(key => {
-            updateRelayButton(key, relays[key]);
-          });
-          status.innerText = "🔄 Đã đồng bộ trạng thái relay";
-        }
-      }).catch(err => {
-        status.innerText = "❌ Lỗi đọc Relay: " + err.message;
-      });
-    }, 5000);
+   function updateRelayButton(key, value) {
+  const btn = document.getElementById(key);
+  if (btn) {
+    const isOn = value === 0; // 0 là ON
+    btn.innerText = isOn ? "ON" : "OFF";
+    btn.style.backgroundColor = isOn ? "lightgreen" : "lightcoral";
   }
+}
+   function updateRelayStatusText(key, value) {
+  const el = document.getElementById(`${key}_status`);
+  if (el) {
+    el.innerText = value === 0 ? "ON" : "OFF";
+    el.style.color = value === 0 ? "green" : "red";
+  }
+}
+  function startRelaySync() {
+  setInterval(() => {
+    get(child(ref(db), "control")).then(snapshot => {
+      if (snapshot.exists()) {
+        const relays = snapshot.val();
+        relayKeys.forEach(key => {
+          const value = relays[key];
+          updateRelayButton(key, value); // 0 là ON, 1 là OFF
+          updateRelayStatusText(key, value);
+        });
+        status.innerText = "🔄 Đã đồng bộ trạng thái relay";
+      }
+    }).catch(err => {
+      status.innerText = "❌ Lỗi đọc control: " + err.message;
+    });
+  }, 5000);
+}
 });

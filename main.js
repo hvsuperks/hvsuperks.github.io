@@ -18,12 +18,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const status = document.getElementById("status");
 
   const settingKeys = [
-    "co2_off_1", "co2_off_2", "co2_on_1", "co2_on_2", "temp_set"
-    // 👉 thêm các key khác trong Setting nếu muốn
+    "co2_off_1", "co2_off_2", "co2_on_1", "co2_on_2",
+    "delay_fillter", "fillter_pause", "set_upload",
+    "temp_diff", "temp_offset", "temp_set", "test",
+    "water_day_1", "water_day_2", "water_speed", "water_volume",
+    "x_offset", "y_offset"
   ];
 
   const relayKeys = ["fillter", "co2", "chiller"];
-
+   
   // Đăng nhập
   signInWithEmailAndPassword(auth, "hvsuperks@gmail.com", "SAObang!((#")
     .then(() => {

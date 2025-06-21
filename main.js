@@ -1,6 +1,18 @@
 
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
   import { getDatabase, ref, get, child, set } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js';
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+  const auth = getAuth(app);
+  
+  signInWithEmailAndPassword(auth, "hvsuperks@gmail.com", "SAObang!((#")
+  .then(() => {
+    status.innerText = "✅ Đăng nhập thành công";
+    loadFirebaseData();  // gọi đoạn load này tại đây
+  })
+  .catch((error) => {
+    status.innerText = "❌ Lỗi đăng nhập: " + error.message;
+  });
+
   // firebaseconfig.js
    const firebaseConfig = {
     apiKey: "AIzaSyAOOtP5Va7zCa9lH62H20piGYCvdACt9DE",
@@ -26,6 +38,7 @@
   ];
 
   // Load dữ liệu từ Firebase
+function loadFirebaseData() {
   get(child(ref(db), "Setting")).then(snapshot => {
     if (snapshot.exists()) {
       const data = snapshot.val();
@@ -36,8 +49,14 @@
         }
       });
       status.innerText = "Đã tải dữ liệu từ Firebase";
+    } else {
+      status.innerText = "Không tìm thấy dữ liệu Setting";
     }
+  }).catch(err => {
+    status.innerText = "Lỗi đọc dữ liệu: " + err.message;
   });
+}
+
 
   // Ghi lại sau 5s không gõ
   const debounceTimers = {};

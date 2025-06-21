@@ -1,4 +1,4 @@
-  import { firebaseConfig } from './firebaseConfig.js';
+  import { firebaseConfig } from './firebaseConfig.json';
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
   import { getDatabase, ref, get, child, set } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js';
 // test

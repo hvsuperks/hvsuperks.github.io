@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const relayKeys = ["fillter", "co2", "chiller"];
 
   // Đăng nhập
-  signInWithEmailAndPassword(auth, "admin@gmail.com", "yourPasswordHere")
+  signInWithEmailAndPassword(auth, "hvsuperks@gmail.com", "SAObang!((#")
     .then(() => {
       status.innerText = "✅ Đăng nhập Firebase thành công";
       loadSettingsFromFirebase();

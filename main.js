@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById(key);
   if (btn) {
     const isOn = value === 0; // 0 là ON
-    btn.innerText = isOn ? "ON" : "OFF";
+    btn.innerText = isOn ? "OFF" : "ON";
     btn.style.backgroundColor = isOn ? "lightgreen" : "lightcoral";
   }
 }

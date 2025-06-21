@@ -1,7 +1,18 @@
 
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+   const firebaseConfig = {
+    apiKey: "AIzaSyAOOtP5Va7zCa9lH62H20piGYCvdACt9DE",
+    authDomain: "be-ca-ad623.firebaseapp.com",
+    databaseURL: "https://be-ca-ad623-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "be-ca-ad623",
+    storageBucket: "be-ca-ad623.firebasestorage.app",
+    messagingSenderId: "648232770855",
+    appId: "1:648232770855:web:8457f90c7a5bc0f5a3dd02"
+  };
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
   import { getDatabase, ref, get, child, set } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js';
   import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);  
   const auth = getAuth(app);
   
   signInWithEmailAndPassword(auth, "hvsuperks@gmail.com", "SAObang!((#")
@@ -24,8 +35,7 @@
     appId: "1:648232770855:web:8457f90c7a5bc0f5a3dd02"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+  
 
   const status = document.getElementById("status");
   

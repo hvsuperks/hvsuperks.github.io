@@ -1,6 +1,12 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+<script type="module">
+  import { firebaseConfig } from './firebaseconfig.js';
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+  import { getDatabase, ref, get, child, set } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js';
 
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const status = document.getElementById("status");
 
   const keys = [
     "co2_off_1", "co2_off_2", "co2_on_1", "co2_on_2",
@@ -10,21 +16,21 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10
     "x_offset", "y_offset"
   ];
 
-  // Gán giá trị từ Firebase vào input
-  db.ref("Setting").once("value").then(snapshot => {
-    const data = snapshot.val();
-    if (data) {
+  // Load dữ liệu từ Firebase
+  get(child(ref(db), "Setting")).then(snapshot => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
       keys.forEach(key => {
-        const input = document.getElementById(key);
-        if (input && data[key] !== undefined) {
-          input.value = data[key];
+        const el = document.getElementById(key);
+        if (el && data[key] !== undefined) {
+          el.value = data[key];
         }
       });
       status.innerText = "Đã tải dữ liệu từ Firebase";
     }
   });
 
-  // Ghi lại khi dừng gõ 5s
+  // Ghi lại sau 5s không gõ
   const debounceTimers = {};
   keys.forEach(key => {
     const input = document.getElementById(key);
@@ -33,14 +39,12 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10
         clearTimeout(debounceTimers[key]);
         debounceTimers[key] = setTimeout(() => {
           let val = input.value;
-          if (val === "") return;
-          if (!isNaN(val)) {
-            val = parseFloat(val); // tự động hiểu cả int và float
-          }
-          db.ref("Setting/" + key).set(val)
+          if (!isNaN(val)) val = parseFloat(val);
+          set(ref(db, "Setting/" + key), val)
             .then(() => status.innerText = `Đã cập nhật ${key}: ${val}`)
             .catch(err => status.innerText = `Lỗi cập nhật ${key}: ${err.message}`);
         }, 5000);
       });
     }
   });
+</script>

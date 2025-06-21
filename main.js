@@ -1,12 +1,22 @@
-  import { firebaseConfig } from './firebaseConfig.js';
+
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
   import { getDatabase, ref, get, child, set } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js';
-// test
+  // firebaseconfig.js
+   const firebaseConfig = {
+    apiKey: "AIzaSyAOOtP5Va7zCa9lH62H20piGYCvdACt9DE",
+    authDomain: "be-ca-ad623.firebaseapp.com",
+    databaseURL: "https://be-ca-ad623-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "be-ca-ad623",
+    storageBucket: "be-ca-ad623.firebasestorage.app",
+    messagingSenderId: "648232770855",
+    appId: "1:648232770855:web:8457f90c7a5bc0f5a3dd02"
+  };
+
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
   const status = document.getElementById("status");
-
+  
   const keys = [
     "co2_off_1", "co2_off_2", "co2_on_1", "co2_on_2",
     "delay_fillter", "fillter_pause", "set_upload",

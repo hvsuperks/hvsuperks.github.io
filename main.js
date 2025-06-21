@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "x_offset", "y_offset"
   ];
 
-  const relayKeys = ["fillter", "co2", "chiller"];
+  const relayKeys = ["relay_chiller", "relay_co2", "relay_fillter", "relay_water"];
    
   // Đăng nhập
   signInWithEmailAndPassword(auth, "hvsuperks@gmail.com", "SAObang!((#")
@@ -106,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function startRelaySync() {
     setInterval(() => {
-      get(child(ref(db), "Relay")).then(snapshot => {
+      get(child(ref(db), "control")).then(snapshot => {
         if (snapshot.exists()) {
           const relays = snapshot.val();
           relayKeys.forEach(key => {

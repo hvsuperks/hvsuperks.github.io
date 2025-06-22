@@ -29,26 +29,26 @@
   <div class="panel">
     <h2>Trạng thái nhiệt độ</h2>
     <table>
-      <tr><td class="label">Nhiệt độ bể:</td><td id="temp_tank">26</td><td>°C</td></tr>
-      <tr><td class="label">Nhiệt độ phòng: </td><td id="temp_room">28</td><td>°C</td></tr>
+      <tr><td class="label">Nhiệt độ bể:</td><td id="temp_tank"></td><td>°C</td></tr>
+      <tr><td class="label">Nhiệt độ phòng: </td><td id="temp_room"></td><td>°C</td></tr>
       <tr><td class="label">Nhiệt độ cài đặt: </td><td><input id="temp_set" type="number" step="0.1" min="25" max="29"  value=""></td><td>°C</td></tr>
       <tr><td class="label">Nhiệt độ trên lệch: </td><td><input id="temp_diff" type="number" step="0.1" min="0" max="4"  value=""></td><td>°C</td></tr>
       <tr><td class="label">Nhiệt độ hiệu chỉnh: </td><td><input id="temp_offset"  type="number" step="0.1" min="0" max="5"  value=""></td><td>°C</td></tr>
-      <tr><td class="label">Trạng thái Chiller:</td><td id="chiller_Status"> ON </td><td><button id="relay_chiller" class="onoff-btn">--</button></td></tr>
+      <tr><td class="label">Trạng thái Chiller:</td><td id="relay_chiller_status">  </td><td><button id="relay_chiller" class="onoff-btn">--</button></td></tr>
     </table>
   </div>
 
   <div class="panel">
     <h2>Trạng thái điều khiển</h2>
     <table>
-      <tr><td class="label">Trạng thái Lọc:</td><td id="Loc_Status"> ON </td><td><button id="relay_fillter" class="onoff-btn">--</button></td></tr>
+      <tr><td class="label">Trạng thái Lọc:</td><td id="relay_fillter_status">  </td><td><button id="relay_fillter" class="onoff-btn">--</button></td></tr>
       <tr><td class="label">Thời gian nghỉ của Lọc: </td><td><input id="fillter_pause" type="number" step="1" min="1" max="30"  value=""></td><td>Phút</td></tr>
      <tr class="blank" ><td>&nbsp</td><td></td><td></td></tr>
-      <tr><td class="label">Trạng thái CO2:</td><td ID="CO2_Status"> ON </td><td><button id="relay_co2" class="onoff-btn">--</button></td></tr>
+      <tr><td class="label">Trạng thái CO2:</td><td ID="relay_co2_status">  </td><td><button id="relay_co2" class="onoff-btn">--</button></td></tr>
       <tr><td class="label">CO2 On: </td><td> <input type="number" id ="co2_on_1" value=""></td><td><input type="number" id ="co2_on_2" value=""></td></tr>
       <tr><td class="label">CO2 On: </td><td> <input type="number" id ="co2_off_1" value=""></td><td><input type="number" id ="co2_off_2" value=""></td></tr>
      <tr class="blank"><td>&nbsp</td><td></td><td></td></tr>
-      <tr><td class="label">Trạng thái van thay nước:</td><td ID="Nuoc_Status"> ON </td><td><button id="relay_water" class="onoff-btn">--</button></td></tr>
+      <tr><td class="label">Trạng thái van thay nước:</td><td ID="relay_water_status">  </td><td><button id="relay_water" class="onoff-btn">--</button></td></tr>
       <tr><td class="label">Thời gian thay nước: </td><td><input id="water_day_1" type="number" step="1" min="0" max="7"  value=""></td><td><input id="water_day_2" type="number" step="1" min="0" max="7"  value=""></td></tr>
       <tr><td class="label">Lượng nước thay: </td><td><input id="water_volume"  type="number" step="1" min="0" max="300"  value=""></td><td>L</td></tr>
       <tr><td class="label">Vận tốc thay nước: </td><td><input id="water_speed" type="number" step="0.1" min="0.1" max="300"  value=""></td><td>L/h</td></tr>
@@ -57,7 +57,182 @@
       <tr><td class="label">LCD Y Offset : </td><td><input id="y_offset" type="number" step="1" min="0" max="5"  value=""></td><td>L/h</td></tr>
     </table>
   </div>
+    <div id="Time">Đang kết nối Firebase...</div>
     <div id="status">Đang kết nối Firebase...</div>
-<script type="module" src="main.js"></script>
+<script type="module">
+  
+  const firebaseConfig = {
+      apiKey: "AIzaSyAOOtP5Va7zCa9lH62H20piGYCvdACt9DE",
+      authDomain: "be-ca-ad623.firebaseapp.com",
+      databaseURL: "https://be-ca-ad623-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "be-ca-ad623",
+      storageBucket: "be-ca-ad623.firebasestorage.app",
+      messagingSenderId: "648232770855",
+      appId: "1:648232770855:web:8457f90c7a5bc0f5a3dd02"
+    };
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+    import {
+      getDatabase,
+      ref,
+      set,
+      get,
+      child,
+      update  // 👈 thêm dòng này!
+    } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js';
+
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    document.addEventListener("DOMContentLoaded", () => 
+    {
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const auth = getAuth(app);
+      const status = document.getElementById("status");
+    
+      const settingKeys = [
+          "co2_off_1", "co2_off_2", "co2_on_1", "co2_on_2",
+          "delay_fillter", "fillter_pause", "set_upload",
+          "temp_diff", "temp_offset", "temp_set", "test",
+          "water_day_1", "water_day_2", "water_speed", "water_volume",
+          "x_offset", "y_offset"
+      ];
+
+  
+    
+        // Đăng nhập
+      signInWithEmailAndPassword(auth, "hvsuperks@gmail.com", "SAObang!((#")
+        .then(() => {
+          status.innerText = "✅ Đăng nhập Firebase thành công";
+          loadSettingsFromFirebase();
+          startRelaySync();
+          setupSettingAutoSave();
+          setupRelayButtons();
+        })
+      .catch((err) => {
+        status.innerText = "❌ Lỗi đăng nhập: " + err.message;
+      });
+  
+  function loadSettingsFromFirebase() {
+    get(child(ref(db), "Setting")).then(snapshot => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        settingKeys.forEach(key => {
+          const el = document.getElementById(key);
+          if (el && data[key] !== undefined) {
+            el.value = data[key];
+          }
+        });
+        status.innerText = "✅ Đã tải Setting";
+      } else {
+        status.innerText = "⚠️ Không có dữ liệu Setting";
+      }
+    }).catch(err => {
+      status.innerText = "❌ Lỗi đọc Setting: " + err.message;
+    });
+  }
+
+  function setupSettingAutoSave()
+  {
+    settingKeys.forEach(key => {
+      const el = document.getElementById(key);
+      if (el) {
+        let timer;
+        el.addEventListener("input", () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            const val = parseFloat(el.value);
+            if (!isNaN(val)) {
+              set(ref(db, `Setting/${key}`), val)
+                .then(() => status.innerText = `💾 Cập nhật ${key}: ${val}`)
+                .catch(err => status.innerText = "❌ Lỗi ghi: " + err.message);
+            }
+          }, 5000);
+        });
+      }
+    });
+  }
+
+  function updateRelayButton(key, value) 
+  {
+    const btn = document.getElementById(key);
+    if (btn) {
+      btn.innerText = value ===0 ? "ON" : "OFF";
+      btn.style.backgroundColor = value ===0 ? "lightgreen" : "lightcoral";
+    }
+  }
+  const relayKeys = ["relay_fillter", "relay_co2", "relay_chiller", "relay_water"];
+
+  function setupRelayButtons() {
+    relayKeys.forEach(key => {
+      const btn = document.getElementById(key);
+      if (btn) {
+        btn.addEventListener("click", () => {
+          // Đọc trạng thái hiện tại từ nút
+          const currentValue = btn.innerText === "ON" ? 0 : 1;
+          const newValue = currentValue === 0 ? 1 : 0;
+          update(ref(db, `control`), {
+          [key]: newValue,
+          control_state: 1
+          })
+          .then(() => {
+            status.innerText = `🔁 Đã cập nhật ${key} => ${newValue === 0 ? "ON" : "OFF"}`;
+            updateRelayButton(key, newValue);
+            startRelaySync();
+          })
+          .catch(err => {
+            status.innerText = "❌ Lỗi ghi relay: " + err.message;
+          });
+
+        });
+      }
+    });
+  }
+
+  function updateRelayStatusText(key, value) 
+  {
+    const el = document.getElementById(`${key}_status`);
+    if (el) {
+      el.innerText = value === 0 ? "ON" : "OFF";
+      el.style.color = value === 0 ? "green" : "red";
+    }
+  }
+
+
+const StatusKeys = ["Time", "temp_tank"];
+
+  function startRelaySync() {
+    setInterval(() => {
+      get(child(ref(db), "control")).then(snapshot => {
+        if (snapshot.exists()) {
+          const relays = snapshot.val();
+          relayKeys.forEach(key => {
+            const value = relays[key];
+            updateRelayButton(key, value); // 0 là ON, 1 là OFF
+            updateRelayStatusText(key, value);
+          });
+          status.innerText = "🔄 Đã đồng bộ trạng thái relay";
+        }
+      }).catch(err => {
+        status.innerText = "❌ Lỗi đọc control: " + err.message;
+      });
+
+      get(child(ref(db), "Status")).then(snapshot => {
+        if (snapshot.exists()) {
+          const Status = snapshot.val();
+          StatusKeys.forEach(key => {
+            const el = document.getElementById(key);
+            if (el && Status[key] !== undefined) {
+              el.innerText = Status[key];
+            }
+          });
+        }
+      }).catch(err => {
+        document.getElementById("Time").innerText = "❌ Lỗi đọc Time: " + err.message;
+      });
+
+      
+    }, 1000);
+    }
+  });
+</script>
 </body>
 </html>

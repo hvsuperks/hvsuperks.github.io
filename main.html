@@ -171,7 +171,7 @@
           const newValue = currentValue === 0 ? 1 : 0;
           update(ref(db, `control`), {
           [key]: newValue,
-          control_state: 1
+          //control_state: 1
           })
           .then(() => {
             status.innerText = `🔁 Đã cập nhật ${key} => ${newValue === 0 ? "ON" : "OFF"}`;

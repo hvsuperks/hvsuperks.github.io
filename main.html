@@ -29,7 +29,7 @@
   <div class="panel">
     <h2>Trạng thái nhiệt độ</h2>
     <table>
-      <tr><td class="label">Nhiệt độ bể:</td><td id="temp_tank"></td><td>°C</td></tr>
+      <tr><td class="label">Nhiệt độ bể:</td><td id="Temp_tank"></td><td>°C</td></tr>
       <tr><td class="label">Nhiệt độ phòng: </td><td id="temp_room"></td><td>°C</td></tr>
       <tr><td class="label">Nhiệt độ cài đặt: </td><td><input id="temp_set" type="number" step="0.1" min="25" max="29"  value=""></td><td>°C</td></tr>
       <tr><td class="label">Nhiệt độ trên lệch: </td><td><input id="temp_diff" type="number" step="0.1" min="0" max="4"  value=""></td><td>°C</td></tr>
@@ -169,10 +169,7 @@
           // Đọc trạng thái hiện tại từ nút
           const currentValue = btn.innerText === "ON" ? 0 : 1;
           const newValue = currentValue === 0 ? 1 : 0;
-          update(ref(db, `control`), {
-          [key]: newValue,
-          //control_state: 1
-          })
+          set(ref(db, `control/${key}`),newValue)
           .then(() => {
             status.innerText = `🔁 Đã cập nhật ${key} => ${newValue === 0 ? "ON" : "OFF"}`;
             updateRelayButton(key, newValue);
@@ -197,7 +194,7 @@
   }
 
 
-const StatusKeys = ["Time", "temp_tank"];
+const StatusKeys = ["Time", "Temp_tank"];
 
   function startRelaySync() {
     setInterval(() => {
@@ -222,6 +219,9 @@ const StatusKeys = ["Time", "temp_tank"];
             const el = document.getElementById(key);
             if (el && Status[key] !== undefined) {
               el.innerText = Status[key];
+              if ( key == "Time" &&  el.innerText == Status[key]){
+                el.innerText = "EPS Off";
+              }
             }
           });
         }

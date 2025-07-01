@@ -159,6 +159,7 @@
       btn.style.backgroundColor = value ===0 ? "lightgreen" : "lightcoral";
     }
   }
+
   const relayKeys = ["relay_fillter", "relay_co2", "relay_chiller", "relay_water"];
 
   function setupRelayButtons() {
@@ -193,8 +194,7 @@
     }
   }
 
-
-const StatusKeys = ["Time", "Temp_tank"];
+  const StatusKeys = ["Time", "Temp_tank", "relay_chiller", "relay_fillter", "relay_co2", "relay_water"];
 
   function startRelaySync() {
     setInterval(() => {
@@ -204,9 +204,8 @@ const StatusKeys = ["Time", "Temp_tank"];
           relayKeys.forEach(key => {
             const value = relays[key];
             updateRelayButton(key, value); // 0 là ON, 1 là OFF
-            updateRelayStatusText(key, value);
           });
-          status.innerText = "🔄 Đã đồng bộ trạng thái relay";
+          status.innerText = "🔄 Đã đồng bộ trạng thái relay ...";
         }
       }).catch(err => {
         status.innerText = "❌ Lỗi đọc control: " + err.message;
@@ -217,10 +216,14 @@ const StatusKeys = ["Time", "Temp_tank"];
           const Status = snapshot.val();
           StatusKeys.forEach(key => {
             const el = document.getElementById(key);
-            if (el && Status[key] !== undefined) {
-              el.innerText = Status[key];
-              if ( key == "Time" &&  el.innerText == Status[key]){
-                el.innerText = "EPS Off";
+            if (el &&( Status[key] !== undefined)) {
+              if ( key.substring(0,5) == "relay"){
+                updateRelayStatusText(key,Status[key]);
+              }else{
+                el.innerText = Status[key];
+                if ( key == "Time" &&  el.innerText == Status[key]){
+                  el.innerText = "EPS Off";
+                }
               }
             }
           });

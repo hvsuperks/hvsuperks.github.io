@@ -52,7 +52,7 @@ function onScanSuccess(code) {
                 show("❌ Không tồn tại mã", "cancel");
                 return;
             }
-
+            renderInfo(data);
             let html = `
                 <b>Mã:</b> ${code}<br>
                 <b>Tên:</b> ${data["Tên Keo"] || ""}<br>
@@ -75,6 +75,47 @@ function onScanSuccess(code) {
 }
 
 const html5QrCode = new Html5Qrcode("reader");
+function calcRemain(expireStr) {
+    // đổi "YYYY-MM-DD HH:MM" → Date
+    const expire = new Date(expireStr.replace(" ", "T"));
+    const now = new Date();
+
+    const diffMs = expire - now;
+
+    if (diffMs <= 0) {
+        return { text: "ĐÃ HẾT HẠN", expired: true };
+    }
+
+    const mins = Math.floor(diffMs / 60000);
+    const days = Math.floor(mins / 1440);
+    const hours = Math.floor((mins % 1440) / 60);
+    const minutes = mins % 60;
+
+    return {
+        text: `Còn ${days} ngày ${hours} giờ ${minutes} phút`,
+        expired: false
+    };
+}
+function renderInfo(data) {
+    const hsd = data["Ngày hết hạn"];
+    const remain = calcRemain(hsd);
+
+    let html = `
+        <b>Mã đăng ký:</b> ${data["Mã đăng ký"]}<br>
+        <b>Tên Keo:</b> ${data["Tên Keo"]}<br>
+        <b>Model:</b> ${data["Model"]}<br>
+        <b>Công đoạn:</b> ${data["Công đoạn"]}<br>
+        <b>HSD:</b> ${data["HSD"]}<br>
+        <b>Ngày nhập:</b> ${data["Ngày nhập"]}<br>
+        <b>Ngày hết hạn:</b> ${hsd}<br>
+        <b>Thời gian còn lại:</b>
+        <span class="${remain.expired ? 'expired' : 'valid'}">
+            ${remain.text}
+        </span>
+    `;
+
+    document.getElementById("info").innerHTML = html;
+}
 
 html5QrCode.start(
     { facingMode: "environment" }, // 👈 CAM SAU

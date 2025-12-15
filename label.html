@@ -76,7 +76,7 @@ function renderInfo(data) {
         <b>Ngày nhập:</b> ${data["Ngày nhập"]}<br>
         <b>Ngày hết hạn:</b> ${hsd_}<br>
         <b>Trạng Thái:</b> ${data["Trạng thái"]}<br>
-        if (data["Trạng thái"] == ""){
+        if (data["Trạng thái"] == "Đã hủy"){
             <b>Thời gian còn lại:</b><span class="${remain.expired ? 'expired' : 'valid'}">${remain.text}
         }
         </span>

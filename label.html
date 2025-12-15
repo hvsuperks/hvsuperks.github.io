@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quét QR Code</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+
+<h3>Quét QR Code</h3>
+<div id="reader" style="width:300px"></div>
+<p id="result"></p>
+
+<script>
+    const result = document.getElementById("result");
+
+    function onScanSuccess(decodedText, decodedResult) {
+        result.innerText = "QR: " + decodedText;
+        html5QrCode.stop(); // dừng camera sau khi quét
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+            html5QrCode.start(
+                devices[0].id,
+                {
+                    fps: 10,
+                    qrbox: 250
+                },
+                onScanSuccess
+            );
+        }
+    }).catch(err => {
+        console.error(err);
+    });
+</script>
+
+</body>
+</html>

@@ -247,36 +247,36 @@ function renderTable(rows) {
         ? "📌 10 mã có hạn gần nhất"
         : "⚠️ Danh sách sắp hết hạn (≤ 5 giờ)";
 
-    let html = `<h3>${title}</h3> ...`;
-    html += `
-    <h3>⚠️ Danh sách sắp hết hạn (≤ 8 giờ)</h3>
-    <table border="1" cellpadding="6" cellspacing="0" style="margin:auto;">
-        <tr style="background:#fdd;">
-            <th>Mã</th>
-            <th>Tên keo</th>
-            <th>Model</th>
-            <th>Công đoạn</th>
-            <th>Hết hạn</th>
-            <th>Còn (giờ)</th>
-        </tr>
+    let html = `
+        <h3>${title}</h3>
+        <table border="1" cellpadding="6" cellspacing="0" style="margin:auto;">
+            <tr style="background:#fdd;">
+                <th>Mã</th>
+                <th>Tên keo</th>
+                <th>Model</th>
+                <th>Công đoạn</th>
+                <th>Hết hạn</th>
+                <th>Thời gian còn lại</th>
+            </tr>
     `;
 
     rows.forEach(r => {
         html += `
-        <tr>
-            <td>${r.ma}</td>
-            <td>${r.keo}</td>
-            <td>${r.model}</td>
-            <td>${r.cong_doan}</td>
-            <td>${r.hsd}</td>
-            <td style="color:red;font-weight:bold">${r.remain}</td>
-        </tr>
+            <tr>
+                <td>${r.ma}</td>
+                <td>${r.keo}</td>
+                <td>${r.model}</td>
+                <td>${r.cong_doan}</td>
+                <td>${r.hsd}</td>
+                <td style="color:red;font-weight:bold">${r.remain}</td>
+            </tr>
         `;
     });
 
     html += "</table>";
     document.getElementById("result").innerHTML = html;
 }
+
 </script>
 
 </body>

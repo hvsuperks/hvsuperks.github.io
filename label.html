@@ -182,74 +182,73 @@ function formatRemain(hours) {
     return parts.join(" ");
 }
 
-function loadNearExpire() {
+function loadExpireSmart() {
     fetch(`${FIREBASE}/qr.json`)
         .then(r => r.json())
         .then(data => {
             if (!data) return;
 
-            const rows = [];
+            const near5h = [];
+            const future = [];
 
             Object.values(data).forEach(item => {
                 if (!item["Ngày hết hạn"]) return;
                 if (item["Trạng thái"] === "Đã hủy") return;
 
-                const hours = remainHours(item["Ngày hết hạn"]);
+                const expire = new Date(item["Ngày hết hạn"].replace(" ", "T"));
+                const now = new Date();
+                const diffMs = expire - now;
+                if (diffMs <= 0) return;
 
-                if (hours > 0 && hours <= 8) {
-                    rows.push({
-                        ma: item["Mã đăng ký"],
-                        keo: item["Tên Keo"],
-                        model: item["Model"],
-                        cong_doan: item["Công đoạn"],
-                        hsd: item["Ngày hết hạn"],
-                        remain: formatRemain(hours)
-                    });
+                const hours = diffMs / 3600000;
+
+                const record = {
+                    ma: item["Mã đăng ký"],
+                    keo: item["Tên Keo"],
+                    model: item["Model"],
+                    cong_doan: item["Công đoạn"],
+                    hsd: item["Ngày hết hạn"],
+                    remain: formatRemain(hours),
+                    diffMs
+                };
+
+                if (hours <= 5) {
+                    near5h.push(record);
+                } else {
+                    future.push(record);
                 }
             });
 
-            renderTable(rows);
+            let result;
+
+            if (near5h.length > 0) {
+                result = near5h;
+            } else {
+                // Lấy 10 hạn gần nhất
+                future.sort((a, b) => a.diffMs - b.diffMs);
+                result = future.slice(0, 10);
+            }
+
+            renderTable(result);
         })
         .catch(err => {
             console.error(err);
             show("⚠️ Lỗi tải dữ liệu", "cancel");
         });
 }
+
 function renderTable(rows) {
     if (rows.length === 0) {
-        show("✅ Không có mã nào sắp hết hạn (≤ 8 giờ)", "ok");
+        show("❌ Không có dữ liệu hợp lệ", "cancel");
         return;
     }
 
-    let html = `
-    <h3>⚠️ Danh sách sắp hết hạn (≤ 5 giờ)</h3>
-    <table border="1" cellpadding="6" cellspacing="0" style="margin:auto;">
-        <tr style="background:#fdd;">
-            <th>Mã</th>
-            <th>Tên keo</th>
-            <th>Model</th>
-            <th>Công đoạn</th>
-            <th>Hết hạn</th>
-            <th>Còn (giờ)</th>
-        </tr>
-    `;
+    const title = rows.length <= 10
+        ? "📌 10 mã có hạn gần nhất"
+        : "⚠️ Danh sách sắp hết hạn (≤ 5 giờ)";
 
-    rows.forEach(r => {
-        html += `
-        <tr>
-            <td>${r.ma}</td>
-            <td>${r.keo}</td>
-            <td>${r.model}</td>
-            <td>${r.cong_doan}</td>
-            <td>${r.hsd}</td>
-            <td style="color:red;font-weight:bold">${r.remain}</td>
-        </tr>
-        `;
-    });
+    let html = `<h3>${title}</h3> ...`;
 
-    html += "</table>";
-    document.getElementById("result").innerHTML = html;
-}
 
 </script>
 

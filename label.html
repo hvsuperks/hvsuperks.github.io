@@ -13,84 +13,105 @@ body {
     text-align: center;
     padding: 10px;
 }
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    font-size: 16px;
+}
 #reader {
     width: 300px;
     margin: auto;
+    display: none;
 }
-#result {
-    margin-top: 15px;
-    font-size: 18px;
+input {
+    padding: 8px;
+    width: 80%;
+    font-size: 16px;
 }
 .ok { color: green; }
 .cancel { color: red; }
+.expired { color: red; font-weight: bold; }
+.valid { color: green; }
 </style>
 </head>
 
 <body>
 
-<h2>Quét QR Code</h2>
+<h2>Kiểm tra QR / Mã</h2>
+
+<button onclick="startScan()">📷 Quét QR</button>
+<button onclick="showManual()">⌨ Nhập mã</button>
 
 <div id="reader"></div>
-<div id="info"></div>
+
+<div id="manual" style="display:none;">
+    <input id="manualCode" placeholder="Nhập mã đăng ký">
+    <br><br>
+    <button onclick="checkManual()">Kiểm tra</button>
+</div>
+
+<hr>
+
 <div id="result"></div>
 
 <script>
 const FIREBASE = "https://label-8de5d-default-rtdb.asia-southeast1.firebasedatabase.app";
+let html5QrCode;
+
+/* ================= TIỆN ÍCH ================= */
 
 function show(msg, cls="") {
     const el = document.getElementById("result");
     el.className = cls;
     el.innerHTML = msg;
 }
+
 function calcRemain(expireStr) {
-    // đổi "YYYY-MM-DD HH:MM" → Date
     const expire = new Date(expireStr.replace(" ", "T"));
     const now = new Date();
+    const diff = expire - now;
 
-    const diffMs = expire - now;
-
-    if (diffMs <= 0) {
+    if (diff <= 0) {
         return { text: "ĐÃ HẾT HẠN", expired: true };
     }
 
-    const mins = Math.floor(diffMs / 60000);
+    const mins = Math.floor(diff / 60000);
     const days = Math.floor(mins / 1440);
     const hours = Math.floor((mins % 1440) / 60);
-    const minutes = mins % 60;
 
     return {
-        text: `Còn ${days} ngày ${hours} giờ ${minutes} phút`,
+        text: `Còn ${days} ngày ${hours} giờ`,
         expired: false
     };
 }
-function renderInfo(data) {
-    const hsd_ = data["Ngày hết hạn"];
-    const remain = calcRemain(hsd_);
 
-    let html = `
+/* ================= HIỂN THỊ ================= */
+
+function renderInfo(data) {
+    const hsd = data["Ngày hết hạn"];
+    const remain = calcRemain(hsd);
+
+    const remainHtml = data["Trạng thái"] === "Đã hủy"
+        ? `<span class="expired">ĐÃ HỦY</span>`
+        : `<span class="${remain.expired ? 'expired' : 'valid'}">${remain.text}</span>`;
+
+    return `
         <b>Mã đăng ký:</b> ${data["Mã đăng ký"]}<br>
         <b>Tên Keo:</b> ${data["Tên Keo"]}<br>
         <b>Model:</b> ${data["Model"]}<br>
         <b>Công đoạn:</b> ${data["Công đoạn"]}<br>
         <b>HSD:</b> ${data["HSD"]}<br>
         <b>Ngày nhập:</b> ${data["Ngày nhập"]}<br>
-        <b>Ngày hết hạn:</b> ${hsd_}<br>
+        <b>Ngày hết hạn:</b> ${hsd}<br>
         <b>Trạng thái:</b> ${data["Trạng thái"]}<br>
-        
-        ${
-            data["Trạng thái"] === "Đã hủy"
-            ? `<b>Thời gian còn lại:</b> <span class="expired">ĐÃ HỦY</span>`
-            : `<b>Thời gian còn lại:</b>
-               <span class="${remain.expired ? 'expired' : 'valid'}">
-                   ${remain.text}
-               </span>`
-        }
-        `;
-
-    document.getElementById("info").innerHTML = html;
+        <b>Thời gian còn lại:</b> ${remainHtml}
+    `;
 }
-function onScanSuccess(code) {
-    html5QrCode.stop();
+
+/* ================= CHECK DATA ================= */
+
+function checkCode(code) {
+    show("⏳ Đang kiểm tra...");
 
     fetch(`${FIREBASE}/qr/${code}.json`)
         .then(r => r.json())
@@ -104,14 +125,38 @@ function onScanSuccess(code) {
         .catch(() => show("⚠️ Lỗi kết nối", "cancel"));
 }
 
-const html5QrCode = new Html5Qrcode("reader");
+/* ================= QR ================= */
 
+function startScan() {
+    document.getElementById("reader").style.display = "block";
+    document.getElementById("manual").style.display = "none";
 
-html5QrCode.start(
-    { facingMode: "environment" }, // 👈 CAM SAU
-    { fps: 10, qrbox: 250 },
-    onScanSuccess
-);
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        code => {
+            html5QrCode.stop();
+            checkCode(code);
+        }
+    );
+}
+
+/* ================= NHẬP TAY ================= */
+
+function showManual() {
+    document.getElementById("reader").style.display = "none";
+    document.getElementById("manual").style.display = "block";
+}
+
+function checkManual() {
+    const code = document.getElementById("manualCode").value.trim();
+    if (!code) {
+        alert("Nhập mã trước đã!");
+        return;
+    }
+    checkCode(code);
+}
 </script>
 
 </body>

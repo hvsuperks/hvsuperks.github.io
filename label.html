@@ -64,7 +64,7 @@ function calcRemain(expireStr) {
 }
 function renderInfo(data) {
     const hsd_ = data["Ngày hết hạn"];
-    const remain = calcRemain(hsd);
+    const remain = calcRemain(hsd_);
 
     let html = `
         <b>Mã đăng ký:</b> ${data["Mã đăng ký"]}<br>
@@ -92,7 +92,7 @@ function onScanSuccess(code) {
                 show("❌ Không tồn tại mã", "cancel");
                 return;
             }
-            //renderInfo(data);
+            renderInfo(data);
             if (data.trang_thai === "Đã hủy") {
                 show(html, "cancel");
             } else {

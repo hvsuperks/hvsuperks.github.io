@@ -94,11 +94,6 @@ function onScanSuccess(code) {
                 return;
             }
             renderInfo(data);
-            if (data.trang_thai === "Đã hủy") {
-                show(html, "cancel");
-            } else {
-                show(html, "ok");
-            }
         })
         .catch(() => show("⚠️ Lỗi kết nối", "cancel"));
 }

@@ -53,18 +53,6 @@ function onScanSuccess(code) {
                 return;
             }
             renderInfo(data);
-            let html = `
-                <b>Mã:</b> ${code}<br>
-                <b>Tên:</b> ${data["Tên Keo"] || ""}<br>
-                <b>Công đoạn:</b> ${data["Công đoạn"] || ""}<br>
-                <b>HSD:</b> ${data["HSD"] || ""}<br>
-                <b>Model:</b> ${data["Model"] || ""}<br>
-                <b>Ngày nhập:</b> ${data["Ngày nhập"] || ""}<br>
-                <b>Ngày hết hạn:</b> ${data["Ngày hết hạn"] || ""}<br>
-                <b>Ngày hủy:</b> ${data["Ngày hủy"] || ""}<br>
-                <b>Trạng Thái:</b> ${data["Trạng thái"] || ""}<br>
-            `;
-
             if (data.trang_thai === "Đã hủy") {
                 show(html, "cancel");
             } else {
@@ -97,7 +85,7 @@ function calcRemain(expireStr) {
     };
 }
 function renderInfo(data) {
-    const hsd = data["Ngày hết hạn"];
+    const hsd_ = data["Ngày hết hạn"];
     const remain = calcRemain(hsd);
 
     let html = `
@@ -107,13 +95,13 @@ function renderInfo(data) {
         <b>Công đoạn:</b> ${data["Công đoạn"]}<br>
         <b>HSD:</b> ${data["HSD"]}<br>
         <b>Ngày nhập:</b> ${data["Ngày nhập"]}<br>
-        <b>Ngày hết hạn:</b> ${hsd}<br>
+        <b>Ngày hết hạn:</b> ${hsd_}<br>
+        <b>Trạng Thái:</b> ${data["Trạng thái"]}<br>
         <b>Thời gian còn lại:</b>
         <span class="${remain.expired ? 'expired' : 'valid'}">
             ${remain.text}
         </span>
     `;
-
     document.getElementById("info").innerHTML = html;
 }
 

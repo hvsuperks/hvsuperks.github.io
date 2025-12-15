@@ -138,7 +138,10 @@ function startScan() {
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
+        { fps: 10, qrbox: 300,
+        aspectRatio: 1.0,
+        disableFlip: true
+        },
         code => {
             html5QrCode.stop();
             checkCode(code);

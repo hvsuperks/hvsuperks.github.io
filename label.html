@@ -182,7 +182,7 @@ function formatRemain(hours) {
     return parts.join(" ");
 }
 
-function loadExpireSmart() {
+function loadNearExpire() {
     fetch(`${FIREBASE}/qr.json`)
         .then(r => r.json())
         .then(data => {

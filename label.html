@@ -165,6 +165,22 @@ function remainHours(expireStr) {
     const now = new Date();
     return (expire - now) / 3600000; // giờ
 }
+function formatRemain(hours) {
+    if (hours <= 0) return "Đã hết hạn";
+
+    const totalMinutes = Math.floor(hours * 60);
+
+    const days = Math.floor(totalMinutes / 1440);
+    const hoursLeft = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+
+    let parts = [];
+    if (days > 0) parts.push(`${days} ngày`);
+    if (hoursLeft > 0) parts.push(`${hoursLeft} giờ`);
+    parts.push(`${minutes} phút`);
+
+    return parts.join(" ");
+}
 
 function loadNearExpire() {
     fetch(`${FIREBASE}/qr.json`)
@@ -180,14 +196,14 @@ function loadNearExpire() {
 
                 const hours = remainHours(item["Ngày hết hạn"]);
 
-                if (hours > 0 && hours <= 25) {
+                if (hours > 0 && hours <= 8) {
                     rows.push({
                         ma: item["Mã đăng ký"],
                         keo: item["Tên Keo"],
                         model: item["Model"],
                         cong_doan: item["Công đoạn"],
                         hsd: item["Ngày hết hạn"],
-                        remain: hours.toFixed(1)
+                        remain: formatRemain(hours)
                     });
                 }
             });
@@ -201,7 +217,7 @@ function loadNearExpire() {
 }
 function renderTable(rows) {
     if (rows.length === 0) {
-        show("✅ Không có mã nào sắp hết hạn (≤ 5 giờ)", "ok");
+        show("✅ Không có mã nào sắp hết hạn (≤ 8 giờ)", "ok");
         return;
     }
 

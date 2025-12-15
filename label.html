@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>QR Check</title>
+<title>QR Check 1.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://unpkg.com/html5-qrcode"></script>
@@ -132,10 +132,12 @@ function checkCode(code) {
 /* ================= QR ================= */
 
 function startScan() {
-    document.getElementById("reader").style.display = "block";
+    const reader = document.getElementById("reader");
+    reader.style.display = "block";
     document.getElementById("manual").style.display = "none";
 
     html5QrCode = new Html5Qrcode("reader");
+
     html5QrCode.start(
         {
             facingMode: { exact: "environment" },
@@ -157,6 +159,7 @@ function startScan() {
         }
     );
 }
+
 
 /* ================= NHẬP TAY ================= */
 

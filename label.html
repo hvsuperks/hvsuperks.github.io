@@ -41,28 +41,6 @@ function show(msg, cls="") {
     el.className = cls;
     el.innerHTML = msg;
 }
-
-function onScanSuccess(code) {
-    html5QrCode.stop();
-
-    fetch(`${FIREBASE}/qr/${code}.json`)
-        .then(r => r.json())
-        .then(data => {
-            if (!data) {
-                show("❌ Không tồn tại mã", "cancel");
-                return;
-            }
-            //renderInfo(data);
-            if (data.trang_thai === "Đã hủy") {
-                show(html, "cancel");
-            } else {
-                show(html, "ok");
-            }
-        })
-        .catch(() => show("⚠️ Lỗi kết nối", "cancel"));
-}
-
-const html5QrCode = new Html5Qrcode("reader");
 function calcRemain(expireStr) {
     // đổi "YYYY-MM-DD HH:MM" → Date
     const expire = new Date(expireStr.replace(" ", "T"));
@@ -104,6 +82,28 @@ function renderInfo(data) {
     `;
     document.getElementById("info").innerHTML = html;
 }
+function onScanSuccess(code) {
+    html5QrCode.stop();
+
+    fetch(`${FIREBASE}/qr/${code}.json`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data) {
+                show("❌ Không tồn tại mã", "cancel");
+                return;
+            }
+            //renderInfo(data);
+            if (data.trang_thai === "Đã hủy") {
+                show(html, "cancel");
+            } else {
+                show(html, "ok");
+            }
+        })
+        .catch(() => show("⚠️ Lỗi kết nối", "cancel"));
+}
+
+const html5QrCode = new Html5Qrcode("reader");
+
 
 html5QrCode.start(
     { facingMode: "environment" }, // 👈 CAM SAU

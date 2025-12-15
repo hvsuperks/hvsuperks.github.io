@@ -76,9 +76,9 @@ function renderInfo(data) {
         <b>Ngày nhập:</b> ${data["Ngày nhập"]}<br>
         <b>Ngày hết hạn:</b> ${hsd_}<br>
         <b>Trạng Thái:</b> ${data["Trạng thái"]}<br>
-        <b>Thời gian còn lại:</b>
-        <span class="${remain.expired ? 'expired' : 'valid'}">
-            ${remain.text}
+        if (data["Trạng thái"] == ""){
+            <b>Thời gian còn lại:</b><span class="${remain.expired ? 'expired' : 'valid'}">${remain.text}
+        }
         </span>
     `;
     document.getElementById("info").innerHTML = html;

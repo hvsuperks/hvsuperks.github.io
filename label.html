@@ -132,33 +132,29 @@ function checkCode(code) {
 /* ================= QR ================= */
 
 function startScan() {
-    const reader = document.getElementById("reader");
-    reader.style.display = "block";
+    document.getElementById("reader").style.display = "block";
     document.getElementById("manual").style.display = "none";
 
-    html5QrCode = new Html5Qrcode("reader");
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+    }
 
     html5QrCode.start(
+        { facingMode: "environment" },   // 👈 CHỈ 1 KEY
         {
-            facingMode: { exact: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            fps: 10,
+            qrbox: { width: 350, height: 350 } // 👈 OK
         },
-        {
-            fps: 5,          // thấp hơn để tăng độ nét
-            qrbox: { width: 320, height: 320 }, // nhỏ lại để tập trung
-            aspectRatio: 1.0,
-            disableFlip: true
-        },
-        (code) => {
+        code => {
             html5QrCode.stop();
             checkCode(code);
         },
-        (err) => {
-            // bỏ qua lỗi frame
+        err => {
+            // console.warn(err); // debug nếu cần
         }
     );
 }
+
 
 
 /* ================= NHẬP TAY ================= */

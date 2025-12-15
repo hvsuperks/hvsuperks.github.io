@@ -75,12 +75,18 @@ function renderInfo(data) {
         <b>HSD:</b> ${data["HSD"]}<br>
         <b>Ngày nhập:</b> ${data["Ngày nhập"]}<br>
         <b>Ngày hết hạn:</b> ${hsd_}<br>
-        <b>Trạng Thái:</b> ${data["Trạng thái"]}<br>
-        if (data["Trạng thái"] == "Đã hủy"){
-            <b>Thời gian còn lại:</b><span class="${remain.expired ? 'expired' : 'valid'}">${remain.text}
+        <b>Trạng thái:</b> ${data["Trạng thái"]}<br>
+        
+        ${
+            data["Trạng thái"] === "Đã hủy"
+            ? `<b>Thời gian còn lại:</b> <span class="expired">ĐÃ HỦY</span>`
+            : `<b>Thời gian còn lại:</b>
+               <span class="${remain.expired ? 'expired' : 'valid'}">
+                   ${remain.text}
+               </span>`
         }
-        </span>
-    `;
+        `;
+
     document.getElementById("info").innerHTML = html;
 }
 function onScanSuccess(code) {

@@ -1,14 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>QR Check</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-<div id="reader" style="width:300px"></div>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 10px;
+}
+#reader {
+    width: 300px;
+    margin: auto;
+}
+#result {
+    margin-top: 15px;
+    font-size: 18px;
+}
+.ok { color: green; }
+.cancel { color: red; }
+</style>
+</head>
+
+<body>
+
+<h2>Quét QR Code</h2>
+
+<div id="reader"></div>
+<div id="result"></div>
 
 <script>
-const html5QrCode = new Html5Qrcode("reader");
+const FIREBASE = "https://label-8de5d-default-rtdb.asia-southeast1.firebasedatabase.app";
 
-function onScanSuccess(text) {
-    alert(text);
-    html5QrCode.stop();
+function show(msg, cls="") {
+    const el = document.getElementById("result");
+    el.className = cls;
+    el.innerHTML = msg;
 }
+
+function onScanSuccess(code) {
+    html5QrCode.stop();
+
+    fetch(`${FIREBASE}/qr/${code}.json`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data) {
+                show("❌ Không tồn tại mã", "cancel");
+                return;
+            }
+
+            let html = `
+                <b>Mã:</b> ${code}<br>
+                <b>Tên:</b> ${data.ten || ""}<br>
+                <b>Trạng thái:</b> ${data.trang_thai || ""}
+            `;
+
+            if (data.trang_thai === "Đã hủy") {
+                show(html, "cancel");
+            } else {
+                show(html, "ok");
+            }
+        })
+        .catch(() => show("⚠️ Lỗi kết nối", "cancel"));
+}
+
+const html5QrCode = new Html5Qrcode("reader");
 
 html5QrCode.start(
     { facingMode: "environment" }, // 👈 CAM SAU
@@ -16,3 +76,6 @@ html5QrCode.start(
     onScanSuccess
 );
 </script>
+
+</body>
+</html>

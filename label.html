@@ -180,7 +180,7 @@ function loadNearExpire() {
 
                 const hours = remainHours(item["Ngày hết hạn"]);
 
-                if (hours > 0 && hours <= 5) {
+                if (hours > 0 && hours <= 25) {
                     rows.push({
                         ma: item["Mã đăng ký"],
                         keo: item["Tên Keo"],

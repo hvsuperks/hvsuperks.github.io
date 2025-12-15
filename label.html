@@ -120,7 +120,8 @@ function checkCode(code) {
                 show("❌ Không tồn tại mã", "cancel");
                 return;
             }
-            renderInfo(data);
+            show(renderInfo(data),
+                 data["Trạng thái"] === "Đã hủy" ? "cancel" : "ok");
         })
         .catch(() => show("⚠️ Lỗi kết nối", "cancel"));
 }

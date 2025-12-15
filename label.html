@@ -55,8 +55,14 @@ function onScanSuccess(code) {
 
             let html = `
                 <b>Mã:</b> ${code}<br>
-                <b>Tên:</b> ${data.ten || ""}<br>
-                <b>Trạng thái:</b> ${data.trang_thai || ""}
+                <b>Tên:</b> ${data["Tên Keo"] || ""}<br>
+                <b>Công đoạn:</b> ${data["Công đoạn"] || ""}<br>
+                <b>HSD:</b> ${data["HSD"] || ""}<br>
+                <b>Model:</b> ${data["Model"] || ""}<br>
+                <b>Ngày nhập:</b> ${data["Ngày nhập"] || ""}<br>
+                <b>Ngày hết hạn:</b> ${data["Ngày hết hạn"] || ""}<br>
+                <b>Ngày hủy:</b> ${data["Ngày hủy"] || ""}<br>
+                <b>Trạng Thái:</b> ${data["Trạng thái"] || ""}<br>
             `;
 
             if (data.trang_thai === "Đã hủy") {

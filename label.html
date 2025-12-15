@@ -137,11 +137,23 @@ function startScan() {
 
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10,qrbox: 350},
-        code => {
+        {
+            facingMode: { exact: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+        },
+        {
+            fps: 5,          // thấp hơn để tăng độ nét
+            qrbox: { width: 320, height: 320 }, // nhỏ lại để tập trung
+            aspectRatio: 1.0,
+            disableFlip: true
+        },
+        (code) => {
             html5QrCode.stop();
             checkCode(code);
+        },
+        (err) => {
+            // bỏ qua lỗi frame
         }
     );
 }

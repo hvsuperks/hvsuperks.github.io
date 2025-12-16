@@ -196,7 +196,7 @@ function formatRemain(hours) {
 }
 
 function loadNearExpire() {
-    fetch(`${FIREBASE}/qr.json`)
+    fetch(`${FIREBASE}/qr_X3T1_master.json`)
         .then(r => r.json())
         .then(data => {
             if (!data) return;

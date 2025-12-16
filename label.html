@@ -116,7 +116,7 @@ function renderInfo(data) {
 function checkCode(code) {
     show("⏳ Đang kiểm tra...");
 
-    fetch(`${FIREBASE}/qr/${code}.json`)
+    fetch(`${FIREBASE}/qr_X3T1_master/${code}.json`)
         .then(r => r.json())
         .then(data => {
             if (!data) {

@@ -239,7 +239,7 @@ function loadNearExpire() {
             } else {
                 // Lấy 10 hạn gần nhất
                 future.sort((a, b) => a.diffMs - b.diffMs);
-                result = future.slice(0, 10);
+                result = future.slice(0, 30);
             }
 
             renderTable(result);

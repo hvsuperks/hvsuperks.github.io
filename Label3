@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>QR Check 1.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 10px;
+}
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    font-size: 16px;
+}
+#reader {
+    width: 300px;
+    margin: auto;
+    display: none;
+}
+input {
+    padding: 8px;
+    width: 200px;
+    font-size: 16px;
+}
+.ok { color: green; }
+.cancel { color: red; }
+.expired { color: red; font-weight: bold; }
+.valid { color: green; }
+</style>
+</head>
+
+<body>
+
+<h2>Check Label Epoxy/Grease xưởng 3 tầng 3</h2>
+Nt.Anh@Jahwa.co.kr - Zalo 0975.440.422<br>
+    -----------------------------
+<br>
+<button onclick="startScan()">📷 Quét QR</button>
+<button onclick="showManual()">⌨ Nhập mã</button>
+<button onclick="loadNearExpire()">📋 Xem danh sách sắp hết hạn</button>
+
+<div id="reader"></div>
+
+<div id="manual" style="display:none;">
+    <input id="manualCode" placeholder="Nhập mã đăng ký">
+    <br><br>
+    <button onclick="checkManual()">Kiểm tra</button>
+</div>
+
+<hr>
+
+<div id="result"></div>
+
+<script>
+const FIREBASE = "https://x3t3-6a234-default-rtdb.asia-southeast1.firebasedatabase.app";
+let html5QrCode;
+
+/* ================= TIỆN ÍCH ================= */
+
+function show(msg, cls="") {
+    const el = document.getElementById("result");
+    el.className = cls;
+    el.innerHTML = msg;
+}
+
+function calcRemain(expireStr) {
+    const expire = new Date(expireStr.replace(" ", "T"));
+    const now = new Date();
+    const diff = expire - now;
+
+    if (diff <= 0) {
+        return { text: "ĐÃ HẾT HẠN", expired: true };
+    }
+
+    const mins = Math.floor(diff / 60000);
+    const days = Math.floor(mins / 1440);
+    const hours = Math.floor((mins % 1440) / 60);
+
+    return {
+        text: `Còn ${days} ngày ${hours} giờ`,
+        expired: false
+    };
+}
+
+/* ================= HIỂN THỊ ================= */
+
+function renderInfo(data) {
+    const hsd = data["Ngày hết hạn"];
+    const remain = calcRemain(hsd);
+
+    const remainHtml = data["Trạng thái"] === "Đã hủy"
+        ? `<span class="expired">ĐÃ HỦY</span>`
+        : `<span class="${remain.expired ? 'expired' : 'valid'}">${remain.text}</span>`;
+
+    return `
+        <b>Mã đăng ký:</b> ${data["Mã đăng ký"]}<br>
+        <b>Tên Keo:</b> ${data["Tên Keo"]}<br>
+        <b>Model:</b> ${data["Model"]}<br>
+        <b>Công đoạn:</b> ${data["Công đoạn"]}<br>
+        <b>HSD:</b> ${data["HSD"]}<br>
+        <b>Ngày nhập:</b> ${data["Ngày nhập"]}<br>
+        <b>Ngày hết hạn:</b> ${hsd}<br>
+        <b>Trạng thái:</b> ${data["Trạng thái"]}<br>
+        <b>Thời gian còn lại:</b> ${remainHtml}
+    `;
+}
+
+/* ================= CHECK DATA ================= */
+
+function checkCode(code) {
+    show("⏳ Đang kiểm tra...");
+
+    fetch(`${FIREBASE}/qr_X3T1_master/${code}.json`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data) {
+                show("❌ Không tồn tại mã", "cancel");
+                return;
+            }
+            show(renderInfo(data),
+                 data["Trạng thái"] === "Đã hủy" ? "cancel" : "ok");
+        })
+        .catch(() => show("⚠️ Lỗi kết nối", "cancel"));
+}
+
+/* ================= QR ================= */
+
+function startScan() {
+    document.getElementById("reader").style.display = "block";
+    document.getElementById("manual").style.display = "none";
+
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+    }
+
+    html5QrCode.start(
+        { facingMode: "environment" },   // 👈 CHỈ 1 KEY
+        {
+            fps: 10,
+            qrbox: { width: 350, height: 350 } // 👈 OK
+        },
+        code => {
+            html5QrCode.stop();
+            checkCode(code);
+        },
+        err => {
+            // console.warn(err); // debug nếu cần
+        }
+    );
+}
+
+
+
+/* ================= NHẬP TAY ================= */
+
+function showManual() {
+    document.getElementById("reader").style.display = "none";
+    document.getElementById("manual").style.display = "block";
+}
+
+function checkManual() {
+    const code = document.getElementById("manualCode").value.trim();
+    if (!code) {
+        alert("Nhập mã trước đã!");
+        return;
+    }
+    checkCode(code);
+}
+
+function remainHours(expireStr) {
+    const expire = new Date(expireStr.replace(" ", "T"));
+    const now = new Date();
+    return (expire - now) / 3600000; // giờ
+}
+function formatRemain(hours) {
+    if (hours <= 0) return "Đã hết hạn";
+
+    const totalMinutes = Math.floor(hours * 60);
+
+    const days = Math.floor(totalMinutes / 1440);
+    const hoursLeft = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+
+    let parts = [];
+    if (days > 0) parts.push(`${days} ngày`);
+    if (hoursLeft > 0) parts.push(`${hoursLeft} giờ`);
+    parts.push(`${minutes} phút`);
+
+    return parts.join(" ");
+}
+
+function loadNearExpire() {
+    fetch(`${FIREBASE}/qr_X3T1_master.json`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data) return;
+
+            const near5h = [];
+            const future = [];
+
+            Object.values(data).forEach(item => {
+                if (!item["Ngày hết hạn"]) return;
+                if (item["Trạng thái"] === "Đã hủy") return;
+
+                const expire = new Date(item["Ngày hết hạn"].replace(" ", "T"));
+                const now = new Date();
+                const diffMs = expire - now;
+                if (diffMs <= 0) return;
+
+                const hours = diffMs / 3600000;
+
+                const record = {
+                    ma: item["Mã đăng ký"],
+                    keo: item["Tên Keo"],
+                    model: item["Model"],
+                    cong_doan: item["Công đoạn"],
+                    hsd: item["Ngày hết hạn"],
+                    remain: formatRemain(hours),
+                    diffMs
+                };
+
+                if (hours <= 5) {
+                    near5h.push(record);
+                } else {
+                    future.push(record);
+                }
+            });
+
+            let result;
+
+            if (near5h.length > 0) {
+                result = near5h;
+            } else {
+                // Lấy 10 hạn gần nhất
+                future.sort((a, b) => a.diffMs - b.diffMs);
+                result = future.slice(0, 30);
+            }
+
+            renderTable(result);
+        })
+        .catch(err => {
+            console.error(err);
+            show("⚠️ Lỗi tải dữ liệu", "cancel");
+        });
+}
+
+function renderTable(rows) {
+    if (rows.length === 0) {
+        show("❌ Không có dữ liệu hợp lệ", "cancel");
+        return;
+    }
+
+    const title = rows.length <= 10
+        ? "📌 10 mã có hạn gần nhất"
+        : "⚠️ Danh sách sắp hết hạn (≤ 5 giờ)";
+
+    let html = `
+        <h3>${title}</h3>
+        <table border="1" cellpadding="6" cellspacing="0" style="margin:auto;">
+            <tr style="background:#fdd;">
+                <th>Mã</th>
+                <th>Tên keo</th>
+                <th>Model</th>
+                <th>Công đoạn</th>
+                <th>Hết hạn</th>
+                <th>Thời gian còn lại</th>
+            </tr>
+    `;
+
+    rows.forEach(r => {
+        html += `
+            <tr>
+                <td>${r.ma}</td>
+                <td>${r.keo}</td>
+                <td>${r.model}</td>
+                <td>${r.cong_doan}</td>
+                <td>${r.hsd}</td>
+                <td style="color:red;font-weight:bold">${r.remain}</td>
+            </tr>
+        `;
+    });
+
+    html += "</table>";
+    document.getElementById("result").innerHTML = html;
+}
+
+</script>
+
+</body>
+</html>

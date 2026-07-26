@@ -305,8 +305,8 @@
       // 4. DISPLAY 10 LATEST LOGS
       const logs = [];
       if (esp.log && esp.log.Relay) {
-        Object.keys(esp.log.Relay).forEach(device => {
-          const deviceLogs = esp.log.Relay[device];
+        
+          const deviceLogs = esp.log.Relay.Chiller;
           Object.keys(deviceLogs).forEach(timestampStr => {
             const formattedTime = timestampStr.replace('_', ' ');
             logs.push({
@@ -316,7 +316,7 @@
               timestamp: new Date(formattedTime.replace(/-/g, '/')).getTime()
             });
           });
-        });
+      
       }
 
       if (esp.log && esp.log.Startup) {

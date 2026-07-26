@@ -311,7 +311,7 @@
             const formattedTime = timestampStr.replace('_', ' ');
             logs.push({
               timeStr: formattedTime,
-              device: device,
+              device: "Chiller",
               action: deviceLogs[timestampStr],
               timestamp: new Date(formattedTime.replace(/-/g, '/')).getTime()
             });

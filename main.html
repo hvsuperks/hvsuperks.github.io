@@ -306,13 +306,13 @@
       const logs = [];
       if (esp.log && esp.log.Relay) {
         
-          const deviceLogs = esp.log.Relay.Chiller;
-          Object.keys(deviceLogs).forEach(timestampStr => {
+        
+          Object.keys(esp.log.Relay.Chiller).forEach(timestampStr => {
             const formattedTime = timestampStr.replace('_', ' ');
             logs.push({
               timeStr: formattedTime,
               device: 'Chiller',
-              action: deviceLogs[timestampStr],
+              action: esp.log.Relay.Chiller[timestampStr],
               timestamp: new Date(formattedTime.replace(/-/g, '/')).getTime()
             });
           });

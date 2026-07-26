@@ -3,239 +3,470 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>1.2 Trạng thái hệ thống bể thủy sinh</title>
+  <title>ESP32 Controller Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px;   justify-content: center;  align-items: center; }
-    h2 { background: #4CAF50; color: white; padding: 10px; border-radius: 5px; text-align:center; }
-    .panel { background: white; padding: 15px; margin: 0 auto; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);max-width: 414px; }
-    table { border-collapse: collapse;width:100%; }
-    td, th { padding: 8px; border-bottom: 1px solid #ddd; }
-    .onoff-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
-    .on { background: #4CAF50; color: white; }
-    .off { background: #ccc; color: #333; }
-    td.label { text-align: right; width:60% ;}
-    .blank td {border:none;}
-    td { width:20%;text-align:center;}
-    input{width:60%;text-align:center;}
-    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent-blue: #38bdf8;
+      --accent-green: #22c55e;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+    }
 
- 
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; max-width: 1200px; margin: 0 auto; }
+
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
+    h1 { font-size: 1.5rem; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; }
+
+    /* Layout Grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    
+    .card { background-color: var(--card-bg); border-radius: 12px; padding: 18px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
+    .card-title { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Status Badge */
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .badge-online { background-color: rgba(34, 197, 94, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-offline { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+    .badge-on { background-color: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+    .badge-off { background-color: rgba(148, 163, 184, 0.2); color: var(--text-muted); }
+
+    /* Pingpong Header Info */
+    .pingpong-val { font-size: 2.2rem; font-weight: 700; color: var(--text-main); margin: 6px 0; }
+    .sub-text { font-size: 0.825rem; color: var(--text-muted); }
+
+    /* Key Value & Inputs */
+    .kv-group { display: flex; flex-direction: column; gap: 10px; }
+    .kv-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding: 4px 0; border-bottom: 1px dashed var(--border-color); }
+    .kv-row:last-child { border-bottom: none; }
+    .kv-key { color: var(--text-muted); }
+
+    /* Input styling */
+    input[type="number"] {
+      width: 90px;
+      background-color: #0f172a;
+      border: 1px solid var(--border-color);
+      color: var(--accent-blue);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: right;
+      outline: none;
+    }
+    input[type="number"]:focus {
+      border-color: var(--accent-blue);
+    }
+    button.badge {
+    border: none;
+    cursor: pointer;          /* Hiện con trỏ bàn tay khi rê chuột vào */
+    outline: none;
+    display: inline-block;
+    }
+
+    button.badge:hover {
+    opacity: 0.85;            /* Hiệu ứng mờ nhẹ khi rê chuột vào */
+    }
+
+    button.badge:active {
+    transform: scale(0.98);   /* Hiệu ứng nhún nhẹ khi bấm */
+    }
+    /* Buttons */
+    .btn-save {
+      width: 100%;
+      margin-top: 12px;
+      padding: 8px 12px;
+      background-color: var(--accent-blue);
+      color: #0f172a;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-save:hover { opacity: 0.9; }
+
+    /* Logs Table */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+    th { padding: 10px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
+    td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+    tr:hover { background-color: rgba(255, 255, 255, 0.02); }
+
+    /* Device Grid */
+    .device-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .device-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); }
   </style>
 </head>
 <body>
-  <div class="panel">
-    <h2>Trạng thái nhiệt độ</h2>
-    <table>
-      <tr><td class="label">Nhiệt độ bể:</td><td id="Temp_tank"></td><td>°C</td></tr>
-      <tr><td class="label">Nhiệt độ phòng: </td><td id="temp_room"></td><td>°C</td></tr>
-      <tr><td class="label">Nhiệt độ cài đặt: </td><td><input id="temp_set" type="number" step="0.1" min="25" max="29"  value=""></td><td>°C</td></tr>
-      <tr><td class="label">Nhiệt độ trên lệch: </td><td><input id="temp_diff" type="number" step="0.1" min="0" max="4"  value=""></td><td>°C</td></tr>
-      <tr><td class="label">Nhiệt độ hiệu chỉnh: </td><td><input id="temp_offset"  type="number" step="0.1" min="0" max="5"  value=""></td><td>°C</td></tr>
-      <tr><td class="label">Trạng thái Chiller:</td><td id="relay_chiller_status">  </td><td><button id="relay_chiller" class="onoff-btn">--</button></td></tr>
-    </table>
+
+  <header>
+    <h1>Bể Cá của NT.Anh</h1>
+    <div id="connection-status">
+      <span class="badge badge-offline">Checking...</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Pingpong Temp -->
+    <div class="card">
+      <div class="card-title">Nhiệt độ Hồ (Pingpong)</div>
+      <div class="pingpong-val" id="temp-tank">-- °C</div>
+      <div class="sub-text" id="ping-time">Lần cuối: --</div>
+    </div>
+    
+    <!-- Cấu hình Nhiệt độ (Temp Setting) -->
+    <div class="card">
+      <div class="card-title">Cấu hình Cảm biến (Temp Setting)</div>
+      <div class="kv-group">
+        <div class="kv-row">
+          <span class="kv-key">Chân đọc (Pin)</span>
+          <span class="kv-key" name="setting_temp_pin"> - </span>
+          <input type="number" id="setting_temp_pin" />
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Nhiệt độ cài (°C)</span>
+          <span class="kv-key" name="setting_temp_set"> - </span>
+          <input type="number" step="0.5" id="setting_temp_set" />
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Chênh lệch Diff (°C)</span>
+          <span class="kv-key" name="setting_temp_diff"> - </span>
+          <input type="number" step="0.1" id="setting_temp_diff" />
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Hiệu chỉnh Offset (°C)</span>
+          <span class="kv-key" name="setting_temp_offset"> - </span>
+          <input type="number" step="0.1" id="setting_temp_offset" />
+        </div>
+      </div>
+      <button class="btn-save" onclick="saveTempSettings()">Lưu Nhiệt Độ</button>
+    </div>
+
+    <!-- Cấu hình Đèn & CO2 (Light Setting) -->
+    <div class="card">
+      <div class="card-title">Cấu hình Đèn & CO2 (Light Setting)</div>
+      <div class="kv-group">
+        <div class="kv-row">
+          <span class="kv-key">Giờ bật đền</span>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <span class="kv-key" name="light_start"></span>
+            <input type="number" id="setting_light_startHour" style="width:50px;" min="0" max="23"/> :
+            <input type="number" id="setting_light_startMin" style="width:50px;" min="0" max="59"/>
+          </div>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Giờ tắt đèn</span>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <span class="kv-key" name="light_stop"></span>
+            <input type="number" id="setting_light_endHour" style="width:50px;" min="0" max="23"/> :
+            <input type="number" id="setting_light_endMin" style="width:50px;" min="0" max="59"/>
+          </div>
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Sớm CO2 (Phút)</span>
+          <span class="kv-key" name="setting_light_co2start"></span>
+          <input type="number" id="setting_light_co2start" />
+        </div>
+        <div class="kv-row">
+          <span class="kv-key">Trễ CO2 (Phút)</span>
+          <span class="kv-key" name="setting_light_co2stop"></span>
+          <input type="number" id="setting_light_co2stop" />
+        </div>
+      </div>
+      <button class="btn-save" onclick="saveLightSettings()">Lưu Giờ Đèn & CO2</button>
+    </div>
   </div>
 
-  <div class="panel">
-    <h2>Trạng thái điều khiển</h2>
-    <table>
-      <tr><td class="label">Trạng thái Lọc:</td><td id="relay_fillter_status">  </td><td><button id="relay_fillter" class="onoff-btn">--</button></td></tr>
-      <tr><td class="label">Thời gian nghỉ của Lọc: </td><td><input id="fillter_pause" type="number" step="1" min="1" max="30"  value=""></td><td>Phút</td></tr>
-     <tr class="blank" ><td>&nbsp</td><td></td><td></td></tr>
-      <tr><td class="label">Trạng thái CO2:</td><td ID="relay_co2_status">  </td><td><button id="relay_co2" class="onoff-btn">--</button></td></tr>
-      <tr><td class="label">CO2 On: </td><td> <input type="number" id ="co2_on_1" value=""></td><td><input type="number" id ="co2_on_2" value=""></td></tr>
-      <tr><td class="label">CO2 On: </td><td> <input type="number" id ="co2_off_1" value=""></td><td><input type="number" id ="co2_off_2" value=""></td></tr>
-     <tr class="blank"><td>&nbsp</td><td></td><td></td></tr>
-      <tr><td class="label">Trạng thái van thay nước:</td><td ID="relay_water_status">  </td><td><button id="relay_water" class="onoff-btn">--</button></td></tr>
-      <tr><td class="label">Thời gian thay nước: </td><td><input id="water_day_1" type="number" step="1" min="0" max="7"  value=""></td><td><input id="water_day_2" type="number" step="1" min="0" max="7"  value=""></td></tr>
-      <tr><td class="label">Lượng nước thay: </td><td><input id="water_volume"  type="number" step="1" min="0" max="300"  value=""></td><td>L</td></tr>
-      <tr><td class="label">Vận tốc thay nước: </td><td><input id="water_speed" type="number" step="0.1" min="0.1" max="300"  value=""></td><td>L/h</td></tr>
-      <tr><td class="label">Lượng nước đã thay trong tuần: </td><td id="water_today">--</td><td></td></tr>
-      <tr><td class="label">LCD X Offset : </td><td><input id="x_offset" type="number" step="1" min="0" max="5"  value=""></td><td>L/h</td></tr>
-      <tr><td class="label">LCD Y Offset : </td><td><input id="y_offset" type="number" step="1" min="0" max="5"  value=""></td><td>L/h</td></tr>
-    </table>
+  <!-- Device Status -->
+  <div class="card" style="margin-bottom: 24px;">
+    <div class="card-title">Trạng thái Thiết bị (Status)</div>
+    <div class="device-grid" id="status-container"></div>
   </div>
-    <div id="Time">Đang kết nối Firebase...</div>
-    <div id="status">Đang kết nối Firebase...</div>
-<script type="module">
-  
-  const firebaseConfig = {
-      apiKey: "AIzaSyAOOtP5Va7zCa9lH62H20piGYCvdACt9DE",
-      authDomain: "be-ca-ad623.firebaseapp.com",
-      databaseURL: "https://be-ca-ad623-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "be-ca-ad623",
-      storageBucket: "be-ca-ad623.firebasestorage.app",
-      messagingSenderId: "648232770855",
-      appId: "1:648232770855:web:8457f90c7a5bc0f5a3dd02"
-    };
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
-    import {
-      getDatabase,
-      ref,
-      set,
-      get,
-      child,
-      update  // 👈 thêm dòng này!
-    } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js';
 
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-    document.addEventListener("DOMContentLoaded", () => 
-    {
-      const app = initializeApp(firebaseConfig);
-      const db = getDatabase(app);
-      const auth = getAuth(app);
-      const status = document.getElementById("status");
-    
-      const settingKeys = [
-          "co2_off_1", "co2_off_2", "co2_on_1", "co2_on_2",
-          "delay_fillter", "fillter_pause", "set_upload",
-          "temp_diff", "temp_offset", "temp_set", "test",
-          "water_day_1", "water_day_2", "water_speed", "water_volume",
-          "x_offset", "y_offset"
-      ];
+  <!-- 10 Latest Logs -->
+  <div class="card">
+    <div class="card-title">20 Nhật ký gần nhất (Relay & Startup Logs)</div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Thời gian</th>
+            <th>Thiết bị / Sự kiện</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody id="logs-table-body">
+          <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Đang tải dữ liệu...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-  
-    
-        // Đăng nhập
-      signInWithEmailAndPassword(auth, "hvsuperks@gmail.com", "SAObang!((#")
-        .then(() => {
-          status.innerText = "✅ Đăng nhập Firebase thành công";
-          loadSettingsFromFirebase();
-          startRelaySync();
-          setupSettingAutoSave();
-          setupRelayButtons();
-        })
-      .catch((err) => {
-        status.innerText = "❌ Lỗi đăng nhập: " + err.message;
-      });
-  
-  function loadSettingsFromFirebase() {
-    get(child(ref(db), "Setting")).then(snapshot => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        settingKeys.forEach(key => {
-          const el = document.getElementById(key);
-          if (el && data[key] !== undefined) {
-            el.value = data[key];
-          }
-        });
-        status.innerText = "✅ Đã tải Setting";
-      } else {
-        status.innerText = "⚠️ Không có dữ liệu Setting";
-      }
-    }).catch(err => {
-      status.innerText = "❌ Lỗi đọc Setting: " + err.message;
+  <script>
+    // URL Realtime Database của bạn
+    const FIREBASE_URL = "https://be-ca-ad623-default-rtdb.asia-southeast1.firebasedatabase.app";
+    let esp = "";
+    let isWait;
+    // Cờ kiểm tra xem người dùng có đang gõ input hay không (để tránh bị fetch đè mất chữ đang gõ)
+    let isUserEditing = false;
+    let isloadValue = true;
+    // Đánh dấu người dùng đang tương tác với ô input
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('focus', () => isUserEditing = true);
+      input.addEventListener('blur', () => isUserEditing = false);
     });
-  }
 
-  function setupSettingAutoSave()
-  {
-    settingKeys.forEach(key => {
-      const el = document.getElementById(key);
-      if (el) {
-        let timer;
-        el.addEventListener("input", () => {
-          clearTimeout(timer);
-          timer = setTimeout(() => {
-            const val = parseFloat(el.value);
-            if (!isNaN(val)) {
-              set(ref(db, `Setting/${key}`), val)
-                .then(() => status.innerText = `💾 Cập nhật ${key}: ${val}`)
-                .catch(err => status.innerText = "❌ Lỗi ghi: " + err.message);
-            }
-          }, 5000);
-        });
-      }
-    });
-  }
+    function renderDashboard() {
+      if (!esp) return;
 
-  function updateRelayButton(key, value) 
-  {
-    const btn = document.getElementById(key);
-    if (btn) {
-      btn.innerText = value ===0 ? "ON" : "OFF";
-      btn.style.backgroundColor = value ===0 ? "lightgreen" : "lightcoral";
-    }
-  }
+      // 1. PINGPONG & DISCONNECT CHECK
+      if (esp.pingpong) {
+        const pingDateStr = `${esp.pingpong.date} ${esp.pingpong.time}`;
+        const pingTime = new Date(pingDateStr.replace(/-/g, '/'));
+        const now = new Date();
+        const diffSeconds = Math.floor((now - pingTime) / 1000);
+        const isOnline = diffSeconds >= 0 && diffSeconds < 180; // Dưới 3 phút = Online
 
-  const relayKeys = ["relay_fillter", "relay_co2", "relay_chiller", "relay_water"];
+        document.getElementById('temp-tank').textContent = `${parseFloat(esp.pingpong.temptank).toFixed(1)} °C`;
+        document.getElementById('ping-time').textContent = `Lần cuối ping: ${esp.pingpong.date} ${esp.pingpong.time}`;
 
-  function setupRelayButtons() {
-    relayKeys.forEach(key => {
-      const btn = document.getElementById(key);
-      if (btn) {
-        btn.addEventListener("click", () => {
-          // Đọc trạng thái hiện tại từ nút
-          const currentValue = btn.innerText === "ON" ? 0 : 1;
-          const newValue = currentValue === 0 ? 1 : 0;
-          set(ref(db, `control/${key}`),newValue)
-          .then(() => {
-            status.innerText = `🔁 Đã cập nhật ${key} => ${newValue === 0 ? "ON" : "OFF"}`;
-            updateRelayButton(key, newValue);
-            startRelaySync();
-          })
-          .catch(err => {
-            status.innerText = "❌ Lỗi ghi relay: " + err.message;
-          });
-
-        });
-      }
-    });
-  }
-
-  function updateRelayStatusText(key, value) 
-  {
-    const el = document.getElementById(`${key}_status`);
-    if (el) {
-      el.innerText = value === 0 ? "ON" : "OFF";
-      el.style.color = value === 0 ? "green" : "red";
-    }
-  }
-
-  const StatusKeys = ["Time", "Temp_tank", "relay_chiller", "relay_fillter", "relay_co2", "relay_water"];
-
-  function startRelaySync() {
-    setInterval(() => {
-      get(child(ref(db), "control")).then(snapshot => {
-        if (snapshot.exists()) {
-          const relays = snapshot.val();
-          relayKeys.forEach(key => {
-            const value = relays[key];
-            updateRelayButton(key, value); // 0 là ON, 1 là OFF
-          });
-          status.innerText = "🔄 Đã đồng bộ trạng thái relay ...";
+        const statusBadge = document.getElementById('connection-status');
+        if (isOnline) {
+          statusBadge.innerHTML = `<span class="badge badge-online">● Online (${diffSeconds}s trước)</span>`;
+        } else {
+          const minutesAgo = Math.floor(diffSeconds / 60);
+          statusBadge.innerHTML = `<span class="badge badge-offline">● Disconnected (${minutesAgo > 0 ? minutesAgo + ' phút' : 'mất kết nối'})</span>`;
         }
-      }).catch(err => {
-        status.innerText = "❌ Lỗi đọc control: " + err.message;
-      });
+      }
 
-      get(child(ref(db), "Status")).then(snapshot => {
-        if (snapshot.exists()) {
-          const Status = snapshot.val();
-          StatusKeys.forEach(key => {
-            const el = document.getElementById(key);
-            if (el &&( Status[key] !== undefined)) {
-              if ( key.substring(0,5) == "relay"){
-                updateRelayStatusText(key,Status[key]);
-              }else{
-                el.innerText = Status[key];
-                if ( key == "Time" &&  el.innerText == Status[key]){
-                  el.innerText = "EPS Off";
-                }
-              }
+      // 2. FILL CÁC Ô INPUT SETTING (Chỉ điền khi người dùng không tập trung gõ)
+        if (esp.Setting && esp.Setting.Temp) {
+            const tSet = esp.Setting.Temp;
+            
+            // Cú pháp tìm theo attribute name: '[name="..."]'
+            document.querySelector('[name="setting_temp_pin"]').innerText = tSet.pin ?? 0;
+            document.querySelector('[name="setting_temp_set"]').innerText = tSet.temp_set ?? 0;
+            document.querySelector('[name="setting_temp_diff"]').innerText = tSet.temp_diff ?? 0;
+            document.querySelector('[name="setting_temp_offset"]').innerText = tSet.temp_offset ?? 0;
+            if (isloadValue){
+                document.getElementById('setting_temp_pin').value = tSet.pin ?? 0;
+                document.getElementById('setting_temp_set').value = tSet.temp_set ?? 0;
+                document.getElementById('setting_temp_diff').value = tSet.temp_diff ?? 0;
+                document.getElementById('setting_temp_offset').value = tSet.temp_offset ?? 0;
             }
-          });
         }
-      }).catch(err => {
-        document.getElementById("Time").innerText = "❌ Lỗi đọc Time: " + err.message;
-      });
 
+        if (esp.Setting && esp.Setting.Light && esp.Setting.Light[0]) {
+            const lSet = esp.Setting.Light[0];
+            document.querySelector('[name="light_start"]').innerText = (lSet.startHour ?? 0) + ":" + (lSet.startMin ?? 0);
+            document.querySelector('[name="light_stop"]').innerText = (lSet.endHour ?? 0) + ":" + (lSet.endMin ?? 0);
+            document.querySelector('[name="setting_light_co2start"]').innerText = lSet.Co2Start ?? 0;
+            document.querySelector('[name="setting_light_co2stop"]').innerText = lSet.Co2Stop ?? 0;
+            if (isloadValue){
+                document.getElementById('setting_light_startHour').value = (lSet.startHour ?? 0) ;
+                document.getElementById('setting_light_startMin').value =(lSet.startMin ?? 0);
+                document.getElementById('setting_light_endHour').value = (lSet.endHour ?? 0) ;
+                document.getElementById('setting_light_endMin').value = (lSet.endMin ?? 0);
+                document.getElementById('setting_light_co2start').value = lSet.Co2Start ?? 0;
+                document.getElementById('setting_light_co2stop').value = lSet.Co2Stop ?? 0;
+            }
+        }
+    
+        isloadValue = false;
+      // 3. DISPLAY STATUS
+      if (esp.Status) {
+        const statusContainer = document.getElementById('status-container');
+        statusContainer.innerHTML = '';
+        
+        Object.keys(esp.Status).forEach(deviceKey => {
+          const dev = esp.Status[deviceKey];
+          const stateClass = dev.state === 'ON' ? 'badge-on' : 'badge-off';
+          const modeText = dev.mode ? 'Auto' : 'Manual';
+
+          statusContainer.innerHTML += `
+            <div class="device-box">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                <strong style="font-size:1rem;">${deviceKey}</strong>
+                <button type="button" class="badge ${stateClass}" onclick="toggleDeviceState('${deviceKey}')"> ${dev.state} </button>
+              </div>
+              <div class="sub-text">Pin: ${dev.pin} | Mode: ${modeText}</div>
+              <div class="sub-text" style="margin-top: 4px;">Đổi lần cuối: ${dev.lastchange}</div>
+            </div>
+          `;
+        });
+      }
+
+      // 4. DISPLAY 10 LATEST LOGS
+      const logs = [];
+      if (esp.log && esp.log.Relay) {
+        Object.keys(esp.log.Relay).forEach(device => {
+          const deviceLogs = esp.log.Relay[device];
+          Object.keys(deviceLogs).forEach(timestampStr => {
+            const formattedTime = timestampStr.replace('_', ' ');
+            logs.push({
+              timeStr: formattedTime,
+              device: device,
+              action: deviceLogs[timestampStr],
+              timestamp: new Date(formattedTime.replace(/-/g, '/')).getTime()
+            });
+          });
+        });
+      }
+
+      if (esp.log && esp.log.Startup) {
+        Object.keys(esp.log.Startup).forEach(timestampStr => {
+          logs.push({
+            timeStr: timestampStr,
+            device: 'System',
+            action: esp.log.Startup[timestampStr],
+            timestamp: new Date(timestampStr.replace(/-/g, '/')).getTime()
+          });
+        });
+      }
+
+      logs.sort((a, b) => b.timestamp - a.timestamp);
+      const top10 = logs.slice(0, 20);
+
+      const tableBody = document.getElementById('logs-table-body');
+      tableBody.innerHTML = '';
       
-    }, 1000);
+      top10.forEach(item => {
+        const actionColor = item.action === 'ON' ? 'var(--accent-green)' : (item.action === 'OFF' ? 'var(--text-muted)' : 'var(--accent-amber)');
+        tableBody.innerHTML += `
+          <tr>
+            <td>${item.timeStr}</td>
+            <td><strong>${item.device}</strong></td>
+            <td><span style="color: ${actionColor}; font-weight: 600;">${item.action}</span></td>
+          </tr>
+        `;
+      });
     }
-  });
-</script>
+
+    // --- CÁC HÀM UPDATE DỮ LIỆU LÊN FIREBASE (PATCH) ---
+    async function configActive(){
+        const currentState = Number(esp.ChangeState) || 0;
+        const payload = {
+            ChangeState : currentState + 1
+        }
+        try {
+            const res = await fetch(`${FIREBASE_URL}/ESP32.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+            });
+            isWait = false;
+        } catch (err) {
+            alert("Lỗi lưu dữ liệu: " + err.message);
+            isWait = false;
+        }
+    }
+    // 1. Lưu Cấu Hình Nhiệt Độ
+    async function saveTempSettings() {
+        if (isWait){
+            alert("Đang gửi dữ liệu khác rồi");
+            return;
+        }
+      const payload = {
+        pin_temp: Number(document.getElementById('setting_temp_pin').value),
+        temp_set: Number(document.getElementById('setting_temp_set').value),
+        temp_diff: Number(document.getElementById('setting_temp_diff').value),
+        temp_offset: Number(document.getElementById('setting_temp_offset').value)
+      };
+
+      try {
+        const res = await fetch(`${FIREBASE_URL}/config.json`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) configActive();
+      } catch (err) {
+        alert("Lỗi lưu dữ liệu: " + err.message);
+        isWait = false;
+      }
+    }
+
+    // 2. Lưu Cấu Hình Đèn & CO2
+    async function saveLightSettings() {
+        if (isWait){
+            alert("Đang gửi dữ liệu khác rồi");
+            return;
+        }
+      // Hàm phụ trợ: Nếu ô input rỗng ("") thì lấy fallback, ngược lại ép kiểu sang Number
+        const getVal = (id, fallback) => {
+        const val = document.getElementById(id).value;
+        return val === '' ? fallback : Number(val);
+        };
+
+        const defaultLight = esp.Setting?.Light?.[0] ?? {};
+
+        const payload = [{
+        startHour: getVal('setting_light_startHour', defaultLight.startHour ?? 0),
+        startMin:  getVal('setting_light_startMin',  defaultLight.startMin ?? 0),
+        endHour:   getVal('setting_light_endHour',   defaultLight.endHour ?? 0),
+        endMin:    getVal('setting_light_endMin',    defaultLight.endMin ?? 0),
+        Co2Start:  getVal('setting_light_co2start',  defaultLight.Co2Start ?? 0),
+        Co2Stop:   getVal('setting_light_co2stop',   defaultLight.Co2Stop ?? 0)
+        }];
+
+      try {
+        const res = await fetch(`${FIREBASE_URL}/config/LightSchedules.json`, {
+          method: 'PUT', // Dùng PUT vì Light trong JSON của bạn là một Array [...]
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) configActive();
+      } catch (err) {
+        alert("Lỗi lưu dữ liệu: " + err.message);
+        isWait = false;
+      }
+    }
+
+    // Click Button Relay
+    async function toggleDeviceState(DeviceID){
+        if (isWait){
+            alert("Đang gửi dữ liệu khác rồi");
+            return;
+        }
+        const currentState = esp.Status[DeviceID].state === "ON";
+        DeviceID = DeviceID.toLowerCase();
+        const payload = {
+            [DeviceID]: currentState
+        };
+        try {
+            const res = await fetch(`${FIREBASE_URL}/config.json`, {
+            method: 'PATCH', // Dùng PUT vì Light trong JSON của bạn là một Array [...]
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+            });
+            if (res.ok) configActive();
+        } catch (err) {
+            alert("Lỗi lưu dữ liệu: " + err.message);
+            isWait = false;
+        }
+    }
+
+    // --- LẤY DỮ LIỆU REALTIME ---
+    async function fetchFromFirebase() {
+      try {
+        const response = await fetch(`${FIREBASE_URL}/ESP32.json`);
+        if (!response.ok) return;
+        esp = await response.json();
+        renderDashboard();
+      } catch (err) {
+        console.error("Lỗi lấy dữ liệu:", err);
+      }
+    }
+
+    // Khởi chạy ngay và tự động load lại mỗi 5 giây
+    fetchFromFirebase();
+    setInterval(fetchFromFirebase, 5000);
+  </script>
 </body>
 </html>
